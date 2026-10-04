@@ -35,4 +35,37 @@ public class BalanceCalculatorTest {
         assertEquals(new BigDecimal("-40.00"), balances.get(april));
         assertEquals(new BigDecimal("-40.00"), balances.get(ecren));
     }
+
+    @Test
+    void calculateBalances_shouldHandleMultipleExpenses() {
+        User doga = new User(1, "Doga", "doga@example.com");
+        User april = new User(2, "April", "april@example.com");
+        User ecren = new User(3, "Ecren", "ecren@example.com");
+
+        Expense groceries = new Expense(1, "Groceries", new BigDecimal("60.00"), doga,
+                List.of(
+                    new ExpenseSplit(1, doga, new BigDecimal("20.00")),
+                    new ExpenseSplit(2, april, new BigDecimal("20.00")),
+                    new ExpenseSplit(3, ecren, new BigDecimal("20.00"))
+                )
+        );
+
+        Expense utilities = new Expense(2, "Utilities", new BigDecimal("30.00"), april,
+                List.of(
+                    new ExpenseSplit(4, doga, new BigDecimal("10.00")),
+                    new ExpenseSplit(5, april, new BigDecimal("10.00")),
+                    new ExpenseSplit(6, ecren, new BigDecimal("10.00"))
+                )
+        );
+
+        BalanceCalculator calculator = new BalanceCalculator();
+        Map<User, BigDecimal> balances = calculator.calculateBalances(
+                List.of(doga, april, ecren),
+                List.of(groceries, utilities)
+        );
+
+        assertEquals(new BigDecimal("30.00"), balances.get(doga));
+        assertEquals(new BigDecimal("0.00"), balances.get(april));
+        assertEquals(new BigDecimal("-30.00"), balances.get(ecren));
+    }
 }

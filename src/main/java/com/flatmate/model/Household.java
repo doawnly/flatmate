@@ -5,11 +5,13 @@ public class Household {
     private int id;
     private String name;
     private List<User> members;
+    private List<Expense> expenses;
 
-    public Household(int id, String name, List<User> members) {
+    public Household(int id, String name, List<User> members, List<Expense> expenses) {
         this.id = id;
         this.name = name;
         this.members = members;
+        this.expenses = expenses;
     }
 
     public int getId() {
@@ -34,5 +36,13 @@ public class Household {
 
     public void setMembers(List<User> members) {
         this.members = members;
+    }
+
+    public List<Expense> getExpenses() {
+        return expenses;
+    }
+
+    public void setExpenses(List<Expense> expenses) {
+        this.expenses = expenses;
     }
 }
