@@ -1,17 +1,35 @@
 package com.flatmate.model;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
 import java.util.List;
 
+@Entity
+@Table(name = "households")
 public class Household {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
-    private String name;
-    private List<User> members;
-    private List<Expense> expenses;
 
-    public Household(int id, String name, List<User> members, List<Expense> expenses) {
+    @Column(nullable = false)
+    private String name;
+
+    @OneToMany(mappedBy = "household")
+    @JsonIgnore
+    private List<User> users;
+
+    public Household() {
+    }
+
+    public Household(int id, String name) {
         this.id = id;
         this.name = name;
-        this.members = members;
-        this.expenses = expenses;
     }
 
     public int getId() {
@@ -30,19 +48,11 @@ public class Household {
         this.name = name;
     }
 
-    public List<User> getMembers() {
-        return members;
+    public List<User> getUsers() {
+        return users;
     }
 
-    public void setMembers(List<User> members) {
-        this.members = members;
-    }
-
-    public List<Expense> getExpenses() {
-        return expenses;
-    }
-
-    public void setExpenses(List<Expense> expenses) {
-        this.expenses = expenses;
+    public void setUsers(List<User> users) {
+        this.users = users;
     }
 }
