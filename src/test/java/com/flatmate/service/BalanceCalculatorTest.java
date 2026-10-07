@@ -26,14 +26,14 @@ public class BalanceCalculatorTest {
         );
 
         BalanceCalculator calculator = new BalanceCalculator();
-        Map<User, BigDecimal> balances = calculator.calculateBalances(
+        Map<Integer, BigDecimal> balances = calculator.calculateBalances(
 
                 List.of(doga, april, ecren),
                 List.of(expense)
         );
-        assertEquals(new BigDecimal("80.00"), balances.get(doga));
-        assertEquals(new BigDecimal("-40.00"), balances.get(april));
-        assertEquals(new BigDecimal("-40.00"), balances.get(ecren));
+        assertEquals(new BigDecimal("80.00"), balances.get(doga.getId()));
+        assertEquals(new BigDecimal("-40.00"), balances.get(april.getId()));
+        assertEquals(new BigDecimal("-40.00"), balances.get(ecren.getId()));
     }
 
     @Test
@@ -59,13 +59,13 @@ public class BalanceCalculatorTest {
         );
 
         BalanceCalculator calculator = new BalanceCalculator();
-        Map<User, BigDecimal> balances = calculator.calculateBalances(
+        Map<Integer, BigDecimal> balances = calculator.calculateBalances(
                 List.of(doga, april, ecren),
                 List.of(groceries, utilities)
         );
 
-        assertEquals(new BigDecimal("30.00"), balances.get(doga));
-        assertEquals(new BigDecimal("0.00"), balances.get(april));
-        assertEquals(new BigDecimal("-30.00"), balances.get(ecren));
+        assertEquals(new BigDecimal("30.00"), balances.get(doga.getId()));
+        assertEquals(new BigDecimal("0.00"), balances.get(april.getId()));
+        assertEquals(new BigDecimal("-30.00"), balances.get(ecren.getId()));
     }
 }
