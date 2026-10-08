@@ -6,6 +6,9 @@ import com.flatmate.service.ExpenseService;
 import com.flatmate.model.User;
 import com.flatmate.repository.UserRepository;
 import com.flatmate.service.BalanceCalculator;
+import com.flatmate.model.Settlement;
+import com.flatmate.service.SettlementCalculator;
+import com.flatmate.model.SettlementResponse;
 import java.math.BigDecimal;
 import java.util.Map;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -66,6 +69,32 @@ public class ExpenseController {
         }
 
         return namedBalances;
+    }
+
+    @GetMapping("/settlements")
+    public List<SettlementResponse> getSettlements() {
+        List<User> users = userRepository.findAll();
+        List<Expense> expenses = expenseRepository.findAll();
+
+        for (Expense expense : expenses) {
+            if (expense.getSplits() == null) {
+                expense.setSplits(List.of());
+            }
+        }
+
+        BalanceCalculator balanceCalculator = new BalanceCalculator();
+        Map<Integer, BigDecimal> balances = balanceCalculator.calculateBalances(users, expenses);
+
+        SettlementCalculator settlementCalculator = new SettlementCalculator();
+
+        return settlementCalculator.calculateSettlements(users, balances)
+                .stream()
+                .map(settlement -> new SettlementResponse(
+                        settlement.getFromUser().getName(),
+                        settlement.getToUser().getName(),
+                        settlement.getAmount()
+                ))
+                .toList();
     }
 
     @PostMapping
