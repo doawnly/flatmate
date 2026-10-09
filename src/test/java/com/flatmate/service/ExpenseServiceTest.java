@@ -1,5 +1,6 @@
 package com.flatmate.service;
 
+import com.flatmate.controller.ResourceNotFoundException;
 import com.flatmate.controller.ExpenseSplitRequest;
 import com.flatmate.model.Expense;
 import com.flatmate.model.Household;
@@ -251,8 +252,8 @@ class ExpenseServiceTest {
 
         when(userRepository.findById(99)).thenReturn(java.util.Optional.empty());
 
-        IllegalArgumentException exception = assertThrows(
-                IllegalArgumentException.class,
+        ResourceNotFoundException exception = assertThrows(
+                ResourceNotFoundException.class,
                 () -> service.createExpense(
                         "Groceries",
                         new BigDecimal("10.00"),
@@ -283,8 +284,8 @@ class ExpenseServiceTest {
         when(userRepository.findById(1)).thenReturn(java.util.Optional.of(payer));
         when(householdRepository.findById(99)).thenReturn(java.util.Optional.empty());
 
-        IllegalArgumentException exception = assertThrows(
-                IllegalArgumentException.class,
+        ResourceNotFoundException exception = assertThrows(
+                ResourceNotFoundException.class,
                 () -> service.createExpense(
                         "Groceries",
                         new BigDecimal("10.00"),
@@ -317,8 +318,8 @@ class ExpenseServiceTest {
         when(userRepository.findById(99)).thenReturn(java.util.Optional.empty());
         when(householdRepository.findById(1)).thenReturn(java.util.Optional.of(household));
 
-        IllegalArgumentException exception = assertThrows(
-                IllegalArgumentException.class,
+        ResourceNotFoundException exception = assertThrows(
+                ResourceNotFoundException.class,
                 () -> service.createExpense(
                         "Groceries",
                         new BigDecimal("10.00"),

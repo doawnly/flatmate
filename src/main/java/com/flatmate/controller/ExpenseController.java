@@ -6,7 +6,6 @@ import com.flatmate.service.ExpenseService;
 import com.flatmate.model.User;
 import com.flatmate.repository.UserRepository;
 import com.flatmate.service.BalanceCalculator;
-import com.flatmate.model.Settlement;
 import com.flatmate.service.SettlementCalculator;
 import com.flatmate.model.SettlementResponse;
 import java.math.BigDecimal;
@@ -16,7 +15,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.http.HttpStatus;
 
 import java.util.List;
 
@@ -36,12 +34,6 @@ public class ExpenseController {
         this.expenseRepository = expenseRepository;
         this.expenseService = expenseService;
         this.userRepository = userRepository;
-    }
-
-    @org.springframework.web.bind.annotation.ExceptionHandler(IllegalArgumentException.class)
-    @org.springframework.web.bind.annotation.ResponseStatus(HttpStatus.BAD_REQUEST)
-    public String handleIllegalArgumentException(IllegalArgumentException exception) {
-        return exception.getMessage();
     }
 
     @GetMapping

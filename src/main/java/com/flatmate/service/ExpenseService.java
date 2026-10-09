@@ -1,5 +1,6 @@
 package com.flatmate.service;
 
+import com.flatmate.controller.ResourceNotFoundException;
 import com.flatmate.model.Expense;
 import com.flatmate.controller.ExpenseSplitRequest;
 import com.flatmate.model.ExpenseSplit;
@@ -60,12 +61,12 @@ public class ExpenseService {
         }
 
         User paidBy = userRepository.findById(paidById)
-                .orElseThrow(() -> new IllegalArgumentException(
+                .orElseThrow(() -> new ResourceNotFoundException(
                 "Payer not found: " + paidById
         ));
 
         Household household = householdRepository.findById(householdId)
-                .orElseThrow(() -> new IllegalArgumentException(
+                .orElseThrow(() -> new ResourceNotFoundException(
                 "Household not found: " + householdId
         ));
 
@@ -88,7 +89,7 @@ public class ExpenseService {
 
         for (ExpenseSplitRequest splitRequest : splits) {
             User user = userRepository.findById(splitRequest.userId())
-                    .orElseThrow(() -> new IllegalArgumentException(
+                    .orElseThrow(() -> new ResourceNotFoundException(
                             "Split user not found: " + splitRequest.userId()
                     ));
 
