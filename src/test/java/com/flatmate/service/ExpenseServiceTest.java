@@ -14,6 +14,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -64,5 +65,269 @@ class ExpenseServiceTest {
         );
 
         assertEquals(savedExpense, result);
+    }
+
+    @Test
+    void shouldRejectZeroExpenseAmount() {
+        ExpenseRepository expenseRepository = mock(ExpenseRepository.class);
+        UserRepository userRepository = mock(UserRepository.class);
+        HouseholdRepository householdRepository = mock(HouseholdRepository.class);
+        ExpenseSplitRepository expenseSplitRepository = mock(ExpenseSplitRepository.class);
+
+        ExpenseService service = new ExpenseService(
+                expenseRepository,
+                userRepository,
+                householdRepository,
+                expenseSplitRepository
+        );
+
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> service.createExpense(
+                        "Groceries",
+                        BigDecimal.ZERO,
+                        1,
+                        1,
+                        List.of()
+                )
+        );
+
+        assertEquals("Expense amount must be greater than zero", exception.getMessage());
+    }
+
+    @Test
+    void shouldRejectNegativeExpenseAmount() {
+        ExpenseRepository expenseRepository = mock(ExpenseRepository.class);
+        UserRepository userRepository = mock(UserRepository.class);
+        HouseholdRepository householdRepository = mock(HouseholdRepository.class);
+        ExpenseSplitRepository expenseSplitRepository = mock(ExpenseSplitRepository.class);
+
+        ExpenseService service = new ExpenseService(
+                expenseRepository,
+                userRepository,
+                householdRepository,
+                expenseSplitRepository
+        );
+
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> service.createExpense(
+                        "Groceries",
+                        new BigDecimal("-50.00"),
+                        1,
+                        1,
+                        List.of()
+                )
+        );
+
+        assertEquals("Expense amount must be greater than zero", exception.getMessage());
+    }
+
+    @Test
+    void shouldRejectBlankExpenseDescription() {
+        ExpenseRepository expenseRepository = mock(ExpenseRepository.class);
+        UserRepository userRepository = mock(UserRepository.class);
+        HouseholdRepository householdRepository = mock(HouseholdRepository.class);
+        ExpenseSplitRepository expenseSplitRepository = mock(ExpenseSplitRepository.class);
+
+        ExpenseService service = new ExpenseService(
+                expenseRepository,
+                userRepository,
+                householdRepository,
+                expenseSplitRepository
+        );
+
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> service.createExpense(
+                        "   ",
+                        new BigDecimal("10.00"),
+                        1,
+                        1,
+                        List.of()
+                )
+        );
+
+        assertEquals("Expense description must not be blank", exception.getMessage());
+    }
+
+    @Test
+    void shouldRejectEmptyExpenseSplits() {
+        ExpenseRepository expenseRepository = mock(ExpenseRepository.class);
+        UserRepository userRepository = mock(UserRepository.class);
+        HouseholdRepository householdRepository = mock(HouseholdRepository.class);
+        ExpenseSplitRepository expenseSplitRepository = mock(ExpenseSplitRepository.class);
+
+        ExpenseService service = new ExpenseService(
+                expenseRepository,
+                userRepository,
+                householdRepository,
+                expenseSplitRepository
+        );
+
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> service.createExpense(
+                        "Groceries",
+                        new BigDecimal("10.00"),
+                        1,
+                        1,
+                        List.of()
+                )
+        );
+
+        assertEquals("At least one expense split is required", exception.getMessage());
+    }
+
+    @Test
+    void shouldRejectZeroSplitAmount() {
+        ExpenseRepository expenseRepository = mock(ExpenseRepository.class);
+        UserRepository userRepository = mock(UserRepository.class);
+        HouseholdRepository householdRepository = mock(HouseholdRepository.class);
+        ExpenseSplitRepository expenseSplitRepository = mock(ExpenseSplitRepository.class);
+
+        ExpenseService service = new ExpenseService(
+                expenseRepository,
+                userRepository,
+                householdRepository,
+                expenseSplitRepository
+        );
+
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> service.createExpense(
+                        "Groceries",
+                        new BigDecimal("10.00"),
+                        1,
+                        1,
+                        List.of(new ExpenseSplitRequest(1, BigDecimal.ZERO))
+                )
+        );
+
+        assertEquals("Split amounts must be greater than zero", exception.getMessage());
+    }
+
+    @Test
+    void shouldRejectNegativeSplitAmount() {
+        ExpenseRepository expenseRepository = mock(ExpenseRepository.class);
+        UserRepository userRepository = mock(UserRepository.class);
+        HouseholdRepository householdRepository = mock(HouseholdRepository.class);
+        ExpenseSplitRepository expenseSplitRepository = mock(ExpenseSplitRepository.class);
+
+        ExpenseService service = new ExpenseService(
+                expenseRepository,
+                userRepository,
+                householdRepository,
+                expenseSplitRepository
+        );
+
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> service.createExpense(
+                        "Groceries",
+                        new BigDecimal("10.00"),
+                        1,
+                        1,
+                        List.of(new ExpenseSplitRequest(1, new BigDecimal("-5.00")))
+                )
+        );
+
+        assertEquals("Split amounts must be greater than zero", exception.getMessage());
+    }
+
+    @Test
+    void shouldRejectMissingPayer() {
+        ExpenseRepository expenseRepository = mock(ExpenseRepository.class);
+        UserRepository userRepository = mock(UserRepository.class);
+        HouseholdRepository householdRepository = mock(HouseholdRepository.class);
+        ExpenseSplitRepository expenseSplitRepository = mock(ExpenseSplitRepository.class);
+
+        ExpenseService service = new ExpenseService(
+                expenseRepository,
+                userRepository,
+                householdRepository,
+                expenseSplitRepository
+        );
+
+        when(userRepository.findById(99)).thenReturn(java.util.Optional.empty());
+
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> service.createExpense(
+                        "Groceries",
+                        new BigDecimal("10.00"),
+                        99,
+                        1,
+                        List.of(new ExpenseSplitRequest(1, new BigDecimal("10.00")))
+                )
+        );
+
+        assertEquals("Payer not found: 99", exception.getMessage());
+    }
+
+    @Test
+    void shouldRejectMissingHousehold() {
+        ExpenseRepository expenseRepository = mock(ExpenseRepository.class);
+        UserRepository userRepository = mock(UserRepository.class);
+        HouseholdRepository householdRepository = mock(HouseholdRepository.class);
+        ExpenseSplitRepository expenseSplitRepository = mock(ExpenseSplitRepository.class);
+
+        ExpenseService service = new ExpenseService(
+                expenseRepository,
+                userRepository,
+                householdRepository,
+                expenseSplitRepository
+        );
+
+        User payer = new User(1, "Doga", "doga@example.com");
+        when(userRepository.findById(1)).thenReturn(java.util.Optional.of(payer));
+        when(householdRepository.findById(99)).thenReturn(java.util.Optional.empty());
+
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> service.createExpense(
+                        "Groceries",
+                        new BigDecimal("10.00"),
+                        1,
+                        99,
+                        List.of(new ExpenseSplitRequest(1, new BigDecimal("10.00")))
+                )
+        );
+
+        assertEquals("Household not found: 99", exception.getMessage());
+    }
+
+    @Test
+    void shouldRejectMissingSplitUser() {
+        ExpenseRepository expenseRepository = mock(ExpenseRepository.class);
+        UserRepository userRepository = mock(UserRepository.class);
+        HouseholdRepository householdRepository = mock(HouseholdRepository.class);
+        ExpenseSplitRepository expenseSplitRepository = mock(ExpenseSplitRepository.class);
+
+        ExpenseService service = new ExpenseService(
+                expenseRepository,
+                userRepository,
+                householdRepository,
+                expenseSplitRepository
+        );
+
+        User payer = new User(1, "Doga", "doga@example.com");
+        Household household = new Household(1, "Flat 21E");
+        when(userRepository.findById(1)).thenReturn(java.util.Optional.of(payer));
+        when(userRepository.findById(99)).thenReturn(java.util.Optional.empty());
+        when(householdRepository.findById(1)).thenReturn(java.util.Optional.of(household));
+
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> service.createExpense(
+                        "Groceries",
+                        new BigDecimal("10.00"),
+                        1,
+                        1,
+                        List.of(new ExpenseSplitRequest(99, new BigDecimal("10.00")))
+                )
+        );
+
+        assertEquals("Split user not found: 99", exception.getMessage());
     }
 }

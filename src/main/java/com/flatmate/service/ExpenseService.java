@@ -41,11 +41,33 @@ public class ExpenseService {
             int householdId,
             List<ExpenseSplitRequest> splits
     ) {
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Expense amount must be greater than zero");
+        }
+
+        if (description == null || description.isBlank()) {
+            throw new IllegalArgumentException("Expense description must not be blank");
+        }
+
+        if (splits == null || splits.isEmpty()) {
+            throw new IllegalArgumentException("At least one expense split is required");
+        }
+
+        if (splits.stream().anyMatch(split ->
+                split.amountOwed() == null ||
+                        split.amountOwed().compareTo(BigDecimal.ZERO) <= 0)) {
+            throw new IllegalArgumentException("Split amounts must be greater than zero");
+        }
+
         User paidBy = userRepository.findById(paidById)
-                .orElseThrow();
+                .orElseThrow(() -> new IllegalArgumentException(
+                "Payer not found: " + paidById
+        ));
 
         Household household = householdRepository.findById(householdId)
-                .orElseThrow();
+                .orElseThrow(() -> new IllegalArgumentException(
+                "Household not found: " + householdId
+        ));
 
         BigDecimal splitTotal = splits.stream()
                 .map(ExpenseSplitRequest::amountOwed)
@@ -66,7 +88,9 @@ public class ExpenseService {
 
         for (ExpenseSplitRequest splitRequest : splits) {
             User user = userRepository.findById(splitRequest.userId())
-                    .orElseThrow();
+                    .orElseThrow(() -> new IllegalArgumentException(
+                            "Split user not found: " + splitRequest.userId()
+                    ));
 
             ExpenseSplit split = new ExpenseSplit(
                     savedExpense,
