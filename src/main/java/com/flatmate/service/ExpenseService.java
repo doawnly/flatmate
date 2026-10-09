@@ -70,6 +70,13 @@ public class ExpenseService {
                 "Household not found: " + householdId
         ));
 
+        if (paidBy.getHousehold() == null ||
+                paidBy.getHousehold().getId() != household.getId()) {
+            throw new IllegalArgumentException(
+                    "Payer must belong to the specified household"
+            );
+        }
+
         BigDecimal splitTotal = splits.stream()
                 .map(ExpenseSplitRequest::amountOwed)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -92,6 +99,13 @@ public class ExpenseService {
                     .orElseThrow(() -> new ResourceNotFoundException(
                             "Split user not found: " + splitRequest.userId()
                     ));
+
+            if (user.getHousehold() == null ||
+                    user.getHousehold().getId() != household.getId()) {
+                throw new IllegalArgumentException(
+                        "Split user must belong to the specified household: " + user.getId()
+                );
+            }
 
             ExpenseSplit split = new ExpenseSplit(
                     savedExpense,

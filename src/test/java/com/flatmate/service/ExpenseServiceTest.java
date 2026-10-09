@@ -38,6 +38,8 @@ class ExpenseServiceTest {
         User doga = new User(1, "Doga", "doga@example.com");
         User april = new User(2, "April", "april@example.com");
         Household household = new Household(1, "Flat 21E");
+        doga.setHousehold(household);
+        april.setHousehold(household);
 
         when(userRepository.findById(1)).thenReturn(java.util.Optional.of(doga));
         when(userRepository.findById(2)).thenReturn(java.util.Optional.of(april));
@@ -314,6 +316,7 @@ class ExpenseServiceTest {
 
         User payer = new User(1, "Doga", "doga@example.com");
         Household household = new Household(1, "Flat 21E");
+        payer.setHousehold(household);
         when(userRepository.findById(1)).thenReturn(java.util.Optional.of(payer));
         when(userRepository.findById(99)).thenReturn(java.util.Optional.empty());
         when(householdRepository.findById(1)).thenReturn(java.util.Optional.of(household));
@@ -330,5 +333,89 @@ class ExpenseServiceTest {
         );
 
         assertEquals("Split user not found: 99", exception.getMessage());
+    }
+
+    @Test
+    void shouldRejectPayerFromDifferentHousehold() {
+        ExpenseRepository expenseRepository = mock(ExpenseRepository.class);
+        UserRepository userRepository = mock(UserRepository.class);
+        HouseholdRepository householdRepository = mock(HouseholdRepository.class);
+        ExpenseSplitRepository expenseSplitRepository = mock(ExpenseSplitRepository.class);
+
+        ExpenseService service = new ExpenseService(
+                expenseRepository,
+                userRepository,
+                householdRepository,
+                expenseSplitRepository
+        );
+
+        Household householdA = new Household(1, "Flat A");
+        Household householdB = new Household(2, "Flat B");
+
+        User payer = new User(1, "Doga", "doga@example.com");
+        payer.setHousehold(householdB);
+
+        when(userRepository.findById(1)).thenReturn(java.util.Optional.of(payer));
+        when(householdRepository.findById(1)).thenReturn(java.util.Optional.of(householdA));
+
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> service.createExpense(
+                        "Groceries",
+                        new BigDecimal("10.00"),
+                        1,
+                        1,
+                        List.of(new ExpenseSplitRequest(1, new BigDecimal("10.00")))
+                )
+        );
+
+        assertEquals(
+                "Payer must belong to the specified household",
+                exception.getMessage()
+        );
+    }
+
+    @Test
+    void shouldRejectSplitUserFromDifferentHousehold() {
+        ExpenseRepository expenseRepository = mock(ExpenseRepository.class);
+        UserRepository userRepository = mock(UserRepository.class);
+        HouseholdRepository householdRepository = mock(HouseholdRepository.class);
+        ExpenseSplitRepository expenseSplitRepository = mock(ExpenseSplitRepository.class);
+
+        ExpenseService service = new ExpenseService(
+                expenseRepository,
+                userRepository,
+                householdRepository,
+                expenseSplitRepository
+        );
+
+        Household householdA = new Household(1, "Flat A");
+        Household householdB = new Household(2, "Flat B");
+
+        User payer = new User(1, "Doga", "doga@example.com");
+        User splitUser = new User(2, "April", "april@example.com");
+
+        payer.setHousehold(householdA);
+        splitUser.setHousehold(householdB);
+
+        when(userRepository.findById(1)).thenReturn(java.util.Optional.of(payer));
+        when(userRepository.findById(2)).thenReturn(java.util.Optional.of(splitUser));
+        when(householdRepository.findById(1)).thenReturn(java.util.Optional.of(householdA));
+
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> service.createExpense(
+                        "Groceries",
+                        new BigDecimal("10.00"),
+                        1,
+                        1,
+                        List.of(new ExpenseSplitRequest(2, new BigDecimal("10.00")))
+                )
+        );
+
+        assertEquals(
+                "Split user must belong to the specified household: 2",
+                exception.getMessage()
+        );
     }
 }
