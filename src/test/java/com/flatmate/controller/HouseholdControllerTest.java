@@ -33,6 +33,7 @@ class HouseholdControllerTest {
 
         mockMvc = MockMvcBuilders
                 .standaloneSetup(householdController)
+                .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
     }
 
