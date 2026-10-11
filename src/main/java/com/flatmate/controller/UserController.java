@@ -6,19 +6,25 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+
+import com.flatmate.dto.CreateUserRequest;
+import com.flatmate.model.Household;
+import com.flatmate.repository.HouseholdRepository;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
 
     private final UserRepository userRepository;
+    private final HouseholdRepository householdRepository;
 
-    public UserController(UserRepository userRepository) {
+    public UserController(UserRepository userRepository, HouseholdRepository householdRepository) {
         this.userRepository = userRepository;
+        this.householdRepository = householdRepository;
     }
 
     @GetMapping
@@ -29,6 +35,19 @@ public class UserController {
     @GetMapping("/{id}")
     public User getUserById(@PathVariable int id) {
         return userRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+    }
+
+    @PostMapping
+    public User createUser(@RequestBody CreateUserRequest request) {
+        Household household = householdRepository.findById(request.getHouseholdId())
+                .orElseThrow(() -> new ResourceNotFoundException("Household not found"));
+
+        User user = new User();
+        user.setName(request.getName());
+        user.setEmail(request.getEmail());
+        user.setHousehold(household);
+
+        return userRepository.save(user);
     }
 }
