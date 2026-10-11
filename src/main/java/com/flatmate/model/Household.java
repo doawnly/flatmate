@@ -8,6 +8,8 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -22,7 +24,7 @@ public class Household {
 
     @OneToMany(mappedBy = "household")
     @JsonIgnore
-    private List<User> users;
+    private List<User> users= new ArrayList<>();
 
     public Household() {
     }
