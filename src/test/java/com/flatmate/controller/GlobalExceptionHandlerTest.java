@@ -74,4 +74,20 @@ class GlobalExceptionHandlerTest {
         assertEquals("Bad Request", response.getBody().error());
         assertEquals("description: must not be blank", response.getBody().message());
     }
+    @Test
+    void shouldReturnConflictForDataIntegrityViolationException() {
+        org.springframework.dao.DataIntegrityViolationException exception =
+                new org.springframework.dao.DataIntegrityViolationException("duplicate value");
+
+        ResponseEntity<ApiError> response =
+                handler.handleDataIntegrityViolationException(exception);
+
+        assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
+        assertEquals(409, response.getBody().status());
+        assertEquals("Conflict", response.getBody().error());
+        assertEquals(
+                "A database constraint was violated",
+                response.getBody().message()
+        );
+    }
 }

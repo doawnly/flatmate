@@ -103,6 +103,28 @@ class UserControllerTest {
         verify(householdRepository).findById(1);
         verify(userRepository).save(any(User.class));
     }
+
+    @Test
+    void shouldReturn409WhenCreatingUserWithExistingEmail() throws Exception {
+        when(userRepository.existsByEmail("dowi@example.com")).thenReturn(true);
+
+        mockMvc.perform(post("/api/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "name": "Dowi",
+                                  "email": "dowi@example.com",
+                                  "householdId": 1
+                                }
+                                """)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isConflict());
+
+        verify(userRepository).existsByEmail("dowi@example.com");
+        verify(userRepository, never()).save(any(User.class));
+        verifyNoInteractions(householdRepository);
+    }
+
     @Test
     void shouldReturn404WhenCreatingUserForMissingHousehold() throws Exception {
         when(householdRepository.findById(999))

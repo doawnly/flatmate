@@ -42,6 +42,12 @@ public class UserController {
 
     @PostMapping
     public User createUser(@Valid @RequestBody CreateUserRequest request) {
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.CONFLICT,
+                    "Email is already registered");
+        }
+
         Household household = householdRepository.findById(request.getHouseholdId())
                 .orElseThrow(() -> new ResourceNotFoundException("Household not found"));
 

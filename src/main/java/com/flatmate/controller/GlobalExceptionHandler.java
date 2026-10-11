@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.dao.DataIntegrityViolationException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -36,6 +37,21 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity
                 .status(HttpStatus.NOT_FOUND)
+                .body(error);
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiError> handleDataIntegrityViolationException(
+            DataIntegrityViolationException exception
+    ) {
+        ApiError error = new ApiError(
+                HttpStatus.CONFLICT.value(),
+                HttpStatus.CONFLICT.getReasonPhrase(),
+                "A database constraint was violated"
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
                 .body(error);
     }
 
