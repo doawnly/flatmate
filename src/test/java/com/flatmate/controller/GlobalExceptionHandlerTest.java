@@ -8,6 +8,7 @@ import java.util.List;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.server.ResponseStatusException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -73,6 +74,24 @@ class GlobalExceptionHandlerTest {
         assertEquals(400, response.getBody().status());
         assertEquals("Bad Request", response.getBody().error());
         assertEquals("description: must not be blank", response.getBody().message());
+    }
+    @Test
+    void shouldReturnConflictForResponseStatusException() {
+        ResponseStatusException exception = new ResponseStatusException(
+                HttpStatus.CONFLICT,
+                "Email is already registered"
+        );
+
+        ResponseEntity<ApiError> response =
+                handler.handleResponseStatusException(exception);
+
+        assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
+        assertEquals(409, response.getBody().status());
+        assertEquals("Conflict", response.getBody().error());
+        assertEquals(
+                "Email is already registered",
+                response.getBody().message()
+        );
     }
     @Test
     void shouldReturnConflictForDataIntegrityViolationException() {
