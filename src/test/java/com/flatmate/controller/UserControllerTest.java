@@ -135,7 +135,10 @@ class UserControllerTest {
                                 }
                                 """)
                         .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.error").value("Bad Request"))
+                .andExpect(jsonPath("$.message").value("email: Email must be valid"));
 
         verify(userRepository, never()).save(any(User.class));
     }
