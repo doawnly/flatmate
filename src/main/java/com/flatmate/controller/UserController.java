@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 import java.util.List;
 
+import jakarta.validation.Valid;
+
 import com.flatmate.dto.CreateUserRequest;
 import com.flatmate.model.Household;
 import com.flatmate.repository.HouseholdRepository;
@@ -39,7 +41,7 @@ public class UserController {
     }
 
     @PostMapping
-    public User createUser(@RequestBody CreateUserRequest request) {
+    public User createUser(@Valid @RequestBody CreateUserRequest request) {
         Household household = householdRepository.findById(request.getHouseholdId())
                 .orElseThrow(() -> new ResourceNotFoundException("Household not found"));
 

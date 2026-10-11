@@ -8,7 +8,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.Optional;
@@ -122,6 +121,54 @@ class UserControllerTest {
                 .andExpect(status().isNotFound());
 
         verify(householdRepository).findById(999);
+        verify(userRepository, never()).save(any(User.class));
+    }
+    @Test
+    void shouldReturn400WhenCreatingUserWithInvalidEmail() throws Exception {
+        mockMvc.perform(post("/api/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "name": "Dowi",
+                                  "email": "not-an-email",
+                                  "householdId": 1
+                                }
+                                """)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest());
+
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    void shouldReturn400WhenCreatingUserWithBlankName() throws Exception {
+        mockMvc.perform(post("/api/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "name": "   ",
+                                  "email": "dowi@example.com",
+                                  "householdId": 1
+                                }
+                                """)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest());
+
+        verify(userRepository, never()).save(any(User.class));
+    }
+    @Test
+    void shouldReturn400WhenCreatingUserWithoutHouseholdId() throws Exception {
+        mockMvc.perform(post("/api/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "name": "Dowi",
+                                  "email": "dowi@example.com"
+                                }
+                                """)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest());
+
         verify(userRepository, never()).save(any(User.class));
     }
 }

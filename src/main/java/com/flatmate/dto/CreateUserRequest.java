@@ -1,10 +1,20 @@
 package com.flatmate.dto;
 
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+
 public class CreateUserRequest {
 
+    @NotBlank(message = "Name is required")
     private String name;
+
+    @NotBlank(message = "Email is required")
+    @Email(message = "Email must be valid")
     private String email;
-    private int householdId;
+
+    @NotNull(message = "Household ID is required")
+    private Integer householdId;
 
     public CreateUserRequest() {
     }
@@ -25,11 +35,11 @@ public class CreateUserRequest {
         this.email = email;
     }
 
-    public int getHouseholdId() {
+    public Integer getHouseholdId() {
         return householdId;
     }
 
-    public void setHouseholdId(int householdId) {
+    public void setHouseholdId(Integer householdId) {
         this.householdId = householdId;
     }
 }
