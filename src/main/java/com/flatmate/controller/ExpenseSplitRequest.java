@@ -1,9 +1,12 @@
 package com.flatmate.controller;
 
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+
 import java.math.BigDecimal;
 
 public record ExpenseSplitRequest(
-        int userId,
-        BigDecimal amountOwed
+        @Positive int userId,
+        @NotNull @Positive BigDecimal amountOwed
 ) {
 }

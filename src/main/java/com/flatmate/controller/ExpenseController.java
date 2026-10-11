@@ -10,6 +10,8 @@ import com.flatmate.service.SettlementCalculator;
 import com.flatmate.model.SettlementResponse;
 import java.math.BigDecimal;
 import java.util.Map;
+
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -90,7 +92,7 @@ public class ExpenseController {
     }
 
     @PostMapping
-    public Expense createExpense(@RequestBody CreateExpenseRequest request) {
+    public Expense createExpense(@Valid @RequestBody CreateExpenseRequest request) {
         return expenseService.createExpense(
                 request.description(),
                 request.amount(),
