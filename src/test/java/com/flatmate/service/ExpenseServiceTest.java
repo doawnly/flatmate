@@ -18,6 +18,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 class ExpenseServiceTest {
 
@@ -68,6 +70,68 @@ class ExpenseServiceTest {
         );
 
         assertEquals(savedExpense, result);
+    }
+
+    @Test
+    void shouldReturnExpensesForExistingHousehold() {
+        ExpenseRepository expenseRepository = mock(ExpenseRepository.class);
+        UserRepository userRepository = mock(UserRepository.class);
+        HouseholdRepository householdRepository = mock(HouseholdRepository.class);
+        ExpenseSplitRepository expenseSplitRepository = mock(ExpenseSplitRepository.class);
+
+        ExpenseService service = new ExpenseService(
+                expenseRepository,
+                userRepository,
+                householdRepository,
+                expenseSplitRepository
+        );
+
+        Household household = new Household(1, "Flat 21E");
+        User payer = new User(1, "Doga", "doga@example.com");
+        payer.setHousehold(household);
+        Expense expense = new Expense(
+                1,
+                "Groceries",
+                new BigDecimal("60.00"),
+                payer,
+                List.of()
+        );
+        List<Expense> expectedExpenses = List.of(expense);
+
+        when(householdRepository.existsById(1)).thenReturn(true);
+        when(expenseRepository.findByHouseholdId(1)).thenReturn(expectedExpenses);
+
+        List<Expense> result = service.getExpensesByHouseholdId(1);
+
+        assertEquals(expectedExpenses, result);
+        verify(householdRepository).existsById(1);
+        verify(expenseRepository).findByHouseholdId(1);
+    }
+
+    @Test
+    void shouldRejectExpensesForNonexistentHousehold() {
+        ExpenseRepository expenseRepository = mock(ExpenseRepository.class);
+        UserRepository userRepository = mock(UserRepository.class);
+        HouseholdRepository householdRepository = mock(HouseholdRepository.class);
+        ExpenseSplitRepository expenseSplitRepository = mock(ExpenseSplitRepository.class);
+
+        ExpenseService service = new ExpenseService(
+                expenseRepository,
+                userRepository,
+                householdRepository,
+                expenseSplitRepository
+        );
+
+        when(householdRepository.existsById(999)).thenReturn(false);
+
+        ResourceNotFoundException exception = assertThrows(
+                ResourceNotFoundException.class,
+                () -> service.getExpensesByHouseholdId(999)
+        );
+
+        assertEquals("Household not found: 999", exception.getMessage());
+        verify(householdRepository).existsById(999);
+        verify(expenseRepository, never()).findByHouseholdId(999);
     }
 
     @Test
@@ -416,6 +480,10 @@ class ExpenseServiceTest {
         assertEquals(
                 "Split user must belong to the specified household: 2",
                 exception.getMessage()
+        );
+
+        verify(expenseRepository, never()).save(
+                org.mockito.ArgumentMatchers.any(Expense.class)
         );
     }
 }

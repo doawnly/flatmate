@@ -1,7 +1,9 @@
 package com.flatmate.controller;
 
 import com.flatmate.model.Household;
+import com.flatmate.model.Expense;
 import com.flatmate.repository.HouseholdRepository;
+import com.flatmate.service.ExpenseService;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -18,9 +20,14 @@ import java.util.List;
 public class HouseholdController {
 
     private final HouseholdRepository householdRepository;
+    private final ExpenseService expenseService;
 
-    public HouseholdController(HouseholdRepository householdRepository) {
+    public HouseholdController(
+            HouseholdRepository householdRepository,
+            ExpenseService expenseService
+    ) {
         this.householdRepository = householdRepository;
+        this.expenseService = expenseService;
     }
 
     @GetMapping
@@ -33,6 +40,11 @@ public class HouseholdController {
         return householdRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Household not found"));
+    }
+
+    @GetMapping("/{id}/expenses")
+    public List<Expense> getExpensesByHouseholdId(@PathVariable int id) {
+        return expenseService.getExpensesByHouseholdId(id);
     }
 
     @PostMapping

@@ -103,4 +103,67 @@ class ExpenseControllerTest {
 
         verifyNoInteractions(expenseService);
     }
+
+    @Test
+    void shouldRejectNonPositiveExpenseAmountBeforeCallingService() throws Exception {
+        ExpenseService expenseService = mock(ExpenseService.class);
+        UserRepository userRepository = mock(UserRepository.class);
+        ExpenseController controller = new ExpenseController(null, expenseService, userRepository);
+        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(controller)
+                .setControllerAdvice(new GlobalExceptionHandler())
+                .build();
+
+        String invalidRequest = """
+                {
+                  "description": "Groceries",
+                  "amount": -10.00,
+                  "paidById": 1,
+                  "householdId": 1,
+                  "splits": [
+                    {"userId": 1, "amountOwed": 10.00}
+                  ]
+                }
+                """;
+
+        mockMvc.perform(post("/api/expenses")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(invalidRequest))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.error").value("Bad Request"));
+
+        verifyNoInteractions(expenseService);
+    }
+
+    @Test
+    void shouldRejectNonPositiveSplitAmountBeforeCallingService() throws Exception {
+        ExpenseService expenseService = mock(ExpenseService.class);
+        UserRepository userRepository = mock(UserRepository.class);
+        ExpenseController controller = new ExpenseController(null, expenseService, userRepository);
+
+        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(controller)
+                .setControllerAdvice(new GlobalExceptionHandler())
+                .build();
+
+        String invalidRequest = """
+            {
+              "description": "Groceries",
+              "amount": 10.00,
+              "paidById": 1,
+              "householdId": 1,
+              "splits": [
+                {"userId": 1, "amountOwed": -10.00}
+              ]
+            }
+            """;
+
+        mockMvc.perform(post("/api/expenses")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(invalidRequest))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.error").value("Bad Request"));
+
+        verifyNoInteractions(expenseService);
+    }
 }

@@ -11,4 +11,7 @@ public interface ExpenseRepository extends JpaRepository<Expense, Integer> {
     @Override
     @EntityGraph(attributePaths = "splits")
     List<Expense> findAll();
+
+    @EntityGraph(attributePaths = "splits")
+    List<Expense> findByHouseholdId(int householdId);
 }

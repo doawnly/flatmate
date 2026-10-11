@@ -11,9 +11,11 @@ import com.flatmate.repository.ExpenseSplitRepository;
 import com.flatmate.repository.HouseholdRepository;
 import com.flatmate.repository.UserRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.ArrayList;
 
 @Service
 public class ExpenseService {
@@ -35,6 +37,15 @@ public class ExpenseService {
         this.expenseSplitRepository = expenseSplitRepository;
     }
 
+    public List<Expense> getExpensesByHouseholdId(int householdId) {
+        if (!householdRepository.existsById(householdId)) {
+            throw new ResourceNotFoundException("Household not found: " + householdId);
+        }
+
+        return expenseRepository.findByHouseholdId(householdId);
+    }
+
+    @Transactional
     public Expense createExpense(
             String description,
             BigDecimal amount,
@@ -85,14 +96,7 @@ public class ExpenseService {
             throw new IllegalArgumentException("Split amounts must add up to the expense amount");
         }
 
-        Expense expense = new Expense(
-                description,
-                amount,
-                paidBy,
-                household
-        );
-
-        Expense savedExpense = expenseRepository.save(expense);
+        List<User> splitUsers = new ArrayList<>();
 
         for (ExpenseSplitRequest splitRequest : splits) {
             User user = userRepository.findById(splitRequest.userId())
@@ -106,6 +110,22 @@ public class ExpenseService {
                         "Split user must belong to the specified household: " + user.getId()
                 );
             }
+
+            splitUsers.add(user);
+        }
+
+        Expense expense = new Expense(
+                description,
+                amount,
+                paidBy,
+                household
+        );
+
+        Expense savedExpense = expenseRepository.save(expense);
+
+        for (int i = 0; i < splits.size(); i++) {
+            ExpenseSplitRequest splitRequest = splits.get(i);
+            User user = splitUsers.get(i);
 
             ExpenseSplit split = new ExpenseSplit(
                     savedExpense,

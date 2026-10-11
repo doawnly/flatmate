@@ -2,6 +2,7 @@ package com.flatmate.controller;
 
 import com.flatmate.model.Household;
 import com.flatmate.repository.HouseholdRepository;
+import com.flatmate.service.ExpenseService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
@@ -19,14 +20,16 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class HouseholdControllerTest {
 
     private HouseholdRepository householdRepository;
+    private ExpenseService expenseService;
     private MockMvc mockMvc;
 
     @BeforeEach
     void setUp() {
         householdRepository = mock(HouseholdRepository.class);
+        expenseService = mock(ExpenseService.class);
 
         HouseholdController householdController =
-                new HouseholdController(householdRepository);
+                new HouseholdController(householdRepository, expenseService);
 
         mockMvc = MockMvcBuilders
                 .standaloneSetup(householdController)
@@ -92,5 +95,19 @@ class HouseholdControllerTest {
                 .andExpect(jsonPath("$.name").value("Flat A"));
 
         verify(householdRepository).save(any(Household.class));
+    }
+
+
+    @Test
+    void shouldReturnExpensesForHousehold() throws Exception {
+        when(expenseService.getExpensesByHouseholdId(1))
+                .thenReturn(List.of());
+
+        mockMvc.perform(get("/api/households/1/expenses")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content().json("[]"));
+
+        verify(expenseService).getExpensesByHouseholdId(1);
     }
 }
