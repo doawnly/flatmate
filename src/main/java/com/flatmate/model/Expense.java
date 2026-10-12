@@ -90,6 +90,7 @@ public class Expense {
         this.paidBy = paidBy;
     }
 
+    @JsonIgnore
     public Household getHousehold() {
         return household;
     }

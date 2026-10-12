@@ -37,6 +37,7 @@ public class ExpenseService {
         this.expenseSplitRepository = expenseSplitRepository;
     }
 
+    @Transactional(readOnly = true)
     public List<Expense> getExpensesByHouseholdId(int householdId) {
         if (!householdRepository.existsById(householdId)) {
             throw new ResourceNotFoundException("Household not found: " + householdId);

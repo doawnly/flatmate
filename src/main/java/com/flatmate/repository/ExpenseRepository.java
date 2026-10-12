@@ -12,6 +12,6 @@ public interface ExpenseRepository extends JpaRepository<Expense, Integer> {
     @EntityGraph(attributePaths = "splits")
     List<Expense> findAll();
 
-    @EntityGraph(attributePaths = "splits")
+    @EntityGraph(attributePaths = {"splits", "paidBy", "household"})
     List<Expense> findByHouseholdId(int householdId);
 }
