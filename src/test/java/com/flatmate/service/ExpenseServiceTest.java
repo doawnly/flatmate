@@ -70,6 +70,16 @@ class ExpenseServiceTest {
         );
 
         assertEquals(savedExpense, result);
+
+        verify(expenseRepository).save(
+                org.mockito.ArgumentMatchers.any(Expense.class)
+        );
+
+        verify(expenseSplitRepository, org.mockito.Mockito.times(2)).save(
+                org.mockito.ArgumentMatchers.any(
+                        com.flatmate.model.ExpenseSplit.class
+                )
+        );
     }
 
     @Test

@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class SettlementCalculatorTest {
 
@@ -84,5 +85,22 @@ public class SettlementCalculatorTest {
                 new BigDecimal("20.00"),
                 settlements.get(1).getAmount()
         );
+    }
+    @Test
+    void shouldReturnNoSettlementsWhenEveryoneIsSettled() {
+        User doga = new User(1, "Doga", "doga@example.com");
+        User april = new User(2, "April", "april@example.com");
+
+        Map<Integer, BigDecimal> balances = Map.of(
+                1, BigDecimal.ZERO,
+                2, BigDecimal.ZERO
+        );
+
+        SettlementCalculator calculator = new SettlementCalculator();
+        List<Settlement> settlements = calculator.calculateSettlements(
+                List.of(doga, april), balances
+        );
+
+        assertTrue(settlements.isEmpty());
     }
 }
