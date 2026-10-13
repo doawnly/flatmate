@@ -5,6 +5,7 @@ import com.flatmate.controller.ExpenseSplitRequest;
 import com.flatmate.model.Expense;
 import com.flatmate.model.Household;
 import com.flatmate.model.User;
+import com.flatmate.model.ExpenseSplit;
 import com.flatmate.repository.ExpenseRepository;
 import com.flatmate.repository.ExpenseSplitRepository;
 import com.flatmate.repository.HouseholdRepository;
@@ -539,6 +540,141 @@ class ExpenseServiceTest {
 
         verify(expenseRepository, never()).save(
                 org.mockito.ArgumentMatchers.any(Expense.class)
+        );
+    }
+    @Test
+    void shouldUpdateExpenseAndReplaceItsSplits() {
+        ExpenseRepository expenseRepository = mock(ExpenseRepository.class);
+        UserRepository userRepository = mock(UserRepository.class);
+        HouseholdRepository householdRepository = mock(HouseholdRepository.class);
+        ExpenseSplitRepository expenseSplitRepository = mock(ExpenseSplitRepository.class);
+
+        ExpenseService service = new ExpenseService(
+                expenseRepository, userRepository, householdRepository, expenseSplitRepository
+        );
+
+        Household household = new Household(1, "Flat 21E");
+        User doga = new User(1, "Doga", "doga@example.com");
+        User april = new User(2, "April", "april@example.com");
+        doga.setHousehold(household);
+        april.setHousehold(household);
+
+        Expense existingExpense = new Expense(
+                1, "Dinner", new BigDecimal("20.00"), doga, List.of()
+        );
+        existingExpense.setHousehold(household);
+
+        when(expenseRepository.findById(1)).thenReturn(java.util.Optional.of(existingExpense));
+        when(userRepository.findById(1)).thenReturn(java.util.Optional.of(doga));
+        when(userRepository.findById(2)).thenReturn(java.util.Optional.of(april));
+        when(expenseSplitRepository.findByExpenseId(1)).thenReturn(List.of());
+        when(expenseRepository.save(existingExpense)).thenReturn(existingExpense);
+
+        Expense result = service.updateExpense(
+                1,
+                "Weekly groceries",
+                new BigDecimal("60.00"),
+                1,
+                1,
+                List.of(
+                        new ExpenseSplitRequest(1, new BigDecimal("30.00")),
+                        new ExpenseSplitRequest(2, new BigDecimal("30.00"))
+                )
+        );
+
+        assertEquals("Weekly groceries", result.getDescription());
+        assertEquals(0, new BigDecimal("60.00").compareTo(result.getAmount()));
+        assertEquals(doga, result.getPaidBy());
+        verify(expenseSplitRepository).deleteAll(List.of());
+        verify(expenseSplitRepository, org.mockito.Mockito.times(2)).save(
+                org.mockito.ArgumentMatchers.any(ExpenseSplit.class)
+        );
+    }
+
+    @Test
+    void shouldDeleteExpenseAndItsSplits() {
+        ExpenseRepository expenseRepository = mock(ExpenseRepository.class);
+        UserRepository userRepository = mock(UserRepository.class);
+        HouseholdRepository householdRepository = mock(HouseholdRepository.class);
+        ExpenseSplitRepository expenseSplitRepository = mock(ExpenseSplitRepository.class);
+
+        ExpenseService service = new ExpenseService(
+                expenseRepository, userRepository, householdRepository, expenseSplitRepository
+        );
+
+        Household household = new Household(1, "Flat 21E");
+        User doga = new User(1, "Doga", "doga@example.com");
+        doga.setHousehold(household);
+        Expense expense = new Expense(1, "Dinner", new BigDecimal("20.00"), doga, List.of());
+        expense.setHousehold(household);
+        List<ExpenseSplit> splits = List.of(
+                new ExpenseSplit(expense, doga, new BigDecimal("20.00"))
+        );
+
+        when(expenseRepository.findById(1)).thenReturn(java.util.Optional.of(expense));
+        when(expenseSplitRepository.findByExpenseId(1)).thenReturn(splits);
+
+        service.deleteExpense(1);
+
+        verify(expenseSplitRepository).deleteAll(splits);
+        verify(expenseRepository).delete(expense);
+    }
+
+    @Test
+    void shouldRejectUpdatingExpenseThatDoesNotExist() {
+        ExpenseRepository expenseRepository = mock(ExpenseRepository.class);
+        UserRepository userRepository = mock(UserRepository.class);
+        HouseholdRepository householdRepository = mock(HouseholdRepository.class);
+        ExpenseSplitRepository expenseSplitRepository = mock(ExpenseSplitRepository.class);
+
+        ExpenseService service = new ExpenseService(
+                expenseRepository, userRepository, householdRepository, expenseSplitRepository
+        );
+        when(expenseRepository.findById(999)).thenReturn(java.util.Optional.empty());
+
+        ResourceNotFoundException exception = assertThrows(
+                ResourceNotFoundException.class,
+                () -> service.updateExpense(
+                        999, "Dinner", new BigDecimal("20.00"), 1, 1,
+                        List.of(new ExpenseSplitRequest(1, new BigDecimal("20.00")))
+                )
+        );
+
+        assertEquals("Expense not found: 999", exception.getMessage());
+        verify(expenseSplitRepository, never()).deleteAll(
+                org.mockito.ArgumentMatchers.anyList()
+        );
+    }
+
+    @Test
+    void shouldRejectMovingExpenseToAnotherHousehold() {
+        ExpenseRepository expenseRepository = mock(ExpenseRepository.class);
+        UserRepository userRepository = mock(UserRepository.class);
+        HouseholdRepository householdRepository = mock(HouseholdRepository.class);
+        ExpenseSplitRepository expenseSplitRepository = mock(ExpenseSplitRepository.class);
+
+        ExpenseService service = new ExpenseService(
+                expenseRepository, userRepository, householdRepository, expenseSplitRepository
+        );
+
+        Household household = new Household(1, "Flat 21E");
+        User doga = new User(1, "Doga", "doga@example.com");
+        doga.setHousehold(household);
+        Expense expense = new Expense(1, "Dinner", new BigDecimal("20.00"), doga, List.of());
+        expense.setHousehold(household);
+        when(expenseRepository.findById(1)).thenReturn(java.util.Optional.of(expense));
+
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> service.updateExpense(
+                        1, "Dinner", new BigDecimal("20.00"), 1, 2,
+                        List.of(new ExpenseSplitRequest(1, new BigDecimal("20.00")))
+                )
+        );
+
+        assertEquals("An expense cannot be moved to another household", exception.getMessage());
+        verify(expenseSplitRepository, never()).deleteAll(
+                org.mockito.ArgumentMatchers.anyList()
         );
     }
 }

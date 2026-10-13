@@ -150,4 +150,123 @@ public class ExpenseService {
 
         return savedExpense;
     }
+
+    @Transactional
+    public Expense updateExpense(
+            int expenseId,
+            String description,
+            BigDecimal amount,
+            int paidById,
+            int householdId,
+            List<ExpenseSplitRequest> splits
+    ) {
+        Expense expense = expenseRepository.findById(expenseId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Expense not found: " + expenseId
+                ));
+
+        int existingHouseholdId = expense.getHousehold().getId();
+        if (householdId != existingHouseholdId) {
+            throw new IllegalArgumentException(
+                    "An expense cannot be moved to another household"
+            );
+        }
+
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Expense amount must be greater than zero");
+        }
+
+        if (description == null || description.isBlank()) {
+            throw new IllegalArgumentException("Expense description must not be blank");
+        }
+
+        if (splits == null || splits.isEmpty()) {
+            throw new IllegalArgumentException("At least one expense split is required");
+        }
+
+        long uniqueUserCount = splits.stream()
+                .map(ExpenseSplitRequest::userId)
+                .distinct()
+                .count();
+
+        if (uniqueUserCount != splits.size()) {
+            throw new IllegalArgumentException(
+                    "A user can only appear once in an expense split"
+            );
+        }
+
+        if (splits.stream().anyMatch(split ->
+                split.amountOwed() == null ||
+                        split.amountOwed().compareTo(BigDecimal.ZERO) <= 0)) {
+            throw new IllegalArgumentException("Split amounts must be greater than zero");
+        }
+
+        User paidBy = userRepository.findById(paidById)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Payer not found: " + paidById
+                ));
+
+        if (paidBy.getHousehold() == null ||
+                paidBy.getHousehold().getId() != existingHouseholdId) {
+            throw new IllegalArgumentException(
+                    "Payer must belong to the specified household"
+            );
+        }
+
+        BigDecimal splitTotal = splits.stream()
+                .map(ExpenseSplitRequest::amountOwed)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        if (splitTotal.compareTo(amount) != 0) {
+            throw new IllegalArgumentException("Split amounts must add up to the expense amount");
+        }
+
+        List<User> splitUsers = new ArrayList<>();
+        for (ExpenseSplitRequest splitRequest : splits) {
+            User user = userRepository.findById(splitRequest.userId())
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            "Split user not found: " + splitRequest.userId()
+                    ));
+
+            if (user.getHousehold() == null ||
+                    user.getHousehold().getId() != existingHouseholdId) {
+                throw new IllegalArgumentException(
+                        "Split user must belong to the specified household: " + user.getId()
+                );
+            }
+
+            splitUsers.add(user);
+        }
+
+        expenseSplitRepository.deleteAll(expenseSplitRepository.findByExpenseId(expenseId));
+
+        expense.setDescription(description);
+        expense.setAmount(amount);
+        expense.setPaidBy(paidBy);
+
+        Expense savedExpense = expenseRepository.save(expense);
+
+        for (int i = 0; i < splits.size(); i++) {
+            ExpenseSplitRequest splitRequest = splits.get(i);
+            ExpenseSplit split = new ExpenseSplit(
+                    savedExpense,
+                    splitUsers.get(i),
+                    splitRequest.amountOwed()
+            );
+            expenseSplitRepository.save(split);
+        }
+
+        return savedExpense;
+    }
+
+    @Transactional
+    public void deleteExpense(int expenseId) {
+        Expense expense = expenseRepository.findById(expenseId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Expense not found: " + expenseId
+                ));
+
+        expenseSplitRepository.deleteAll(expenseSplitRepository.findByExpenseId(expenseId));
+        expenseRepository.delete(expense);
+    }
 }

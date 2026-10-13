@@ -29,6 +29,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 
 class ExpenseControllerTest {
 
@@ -322,5 +324,78 @@ class ExpenseControllerTest {
                 .andExpect(jsonPath("$[0].amount").value(50.0));
 
         verify(expenseRepository).findByHouseholdId(1);
+    }
+
+    @Test
+    void shouldUpdateExpenseThroughPutEndpoint() throws Exception {
+        ExpenseService expenseService = mock(ExpenseService.class);
+        UserRepository userRepository = mock(UserRepository.class);
+        HouseholdRepository householdRepository = mock(HouseholdRepository.class);
+
+        ExpenseController controller = new ExpenseController(
+                null, expenseService, userRepository, householdRepository
+        );
+
+        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(controller)
+                .setControllerAdvice(new GlobalExceptionHandler())
+                .build();
+
+        Expense expectedExpense = new Expense();
+
+        when(expenseService.updateExpense(
+                eq(1),
+                eq("Dinner"),
+                eq(new BigDecimal("40.00")),
+                eq(1),
+                eq(1),
+                anyList()
+        )).thenReturn(expectedExpense);
+
+        String requestBody = """
+            {
+              "description": "Dinner",
+              "amount": 40.00,
+              "paidById": 1,
+              "householdId": 1,
+              "splits": [
+                {"userId": 1, "amountOwed": 20.00},
+                {"userId": 2, "amountOwed": 20.00}
+              ]
+            }
+            """;
+
+        mockMvc.perform(put("/api/expenses/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isOk());
+
+        verify(expenseService).updateExpense(
+                eq(1),
+                eq("Dinner"),
+                eq(new BigDecimal("40.00")),
+                eq(1),
+                eq(1),
+                anyList()
+        );
+    }
+
+    @Test
+    void shouldDeleteExpenseThroughDeleteEndpoint() throws Exception {
+        ExpenseService expenseService = mock(ExpenseService.class);
+        UserRepository userRepository = mock(UserRepository.class);
+        HouseholdRepository householdRepository = mock(HouseholdRepository.class);
+
+        ExpenseController controller = new ExpenseController(
+                null, expenseService, userRepository, householdRepository
+        );
+
+        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(controller)
+                .setControllerAdvice(new GlobalExceptionHandler())
+                .build();
+
+        mockMvc.perform(delete("/api/expenses/1"))
+                .andExpect(status().isNoContent());
+
+        verify(expenseService).deleteExpense(1);
     }
 }

@@ -21,6 +21,9 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.http.ResponseEntity;
 
 import java.util.List;
 
@@ -147,6 +150,27 @@ public class ExpenseController {
         }
 
         return expenses;
+    }
+
+    @PutMapping("/{expenseId}")
+    public Expense updateExpense(
+            @PathVariable int expenseId,
+            @Valid @RequestBody CreateExpenseRequest request
+    ) {
+        return expenseService.updateExpense(
+                expenseId,
+                request.description(),
+                request.amount(),
+                request.paidById(),
+                request.householdId(),
+                request.splits()
+        );
+    }
+
+    @DeleteMapping("/{expenseId}")
+    public ResponseEntity<Void> deleteExpense(@PathVariable int expenseId) {
+        expenseService.deleteExpense(expenseId);
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping
