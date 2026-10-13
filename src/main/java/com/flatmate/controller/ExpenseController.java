@@ -45,8 +45,11 @@ public class ExpenseController {
 
     @GetMapping("/balances")
     public Map<String, BigDecimal> getBalances() {
-        List<User> users = userRepository.findAll();
-        List<Expense> expenses = expenseRepository.findAll();
+        int householdId = 1;
+        List<User> users = userRepository.findAll().stream()
+                .filter(user -> user.getHousehold() != null && user.getHousehold().getId() == householdId)
+                .toList();
+        List<Expense> expenses = expenseRepository.findByHouseholdId(householdId);
 
         for (Expense expense : expenses) {
             if (expense.getSplits() == null) {
@@ -67,8 +70,11 @@ public class ExpenseController {
 
     @GetMapping("/settlements")
     public List<SettlementResponse> getSettlements() {
-        List<User> users = userRepository.findAll();
-        List<Expense> expenses = expenseRepository.findAll();
+        int householdId = 1;
+        List<User> users = userRepository.findAll().stream()
+                .filter(user -> user.getHousehold() != null && user.getHousehold().getId() == householdId)
+                .toList();
+        List<Expense> expenses = expenseRepository.findByHouseholdId(householdId);
 
         for (Expense expense : expenses) {
             if (expense.getSplits() == null) {
