@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.PathVariable;
 
 import java.util.List;
 
@@ -45,17 +46,27 @@ public class ExpenseController {
 
     @GetMapping("/balances")
     public Map<String, BigDecimal> getBalances() {
-        int householdId = 1;
-        List<User> users = userRepository.findAll().stream()
-                .filter(user -> user.getHousehold() != null && user.getHousehold().getId() == householdId)
-                .toList();
-        List<Expense> expenses = expenseRepository.findByHouseholdId(householdId);
+        return getBalancesForHousehold(1);
+    }
 
-        for (Expense expense : expenses) {
-            if (expense.getSplits() == null) {
-                expense.setSplits(List.of());
-            }
-        }
+    @GetMapping("/settlements")
+    public List<SettlementResponse> getSettlements() {
+        return getSettlementsForHousehold(1);
+    }
+
+    @GetMapping("/households/{householdId}/balances")
+    public Map<String, BigDecimal> getBalancesByHousehold(@PathVariable int householdId) {
+        return getBalancesForHousehold(householdId);
+    }
+
+    @GetMapping("/households/{householdId}/settlements")
+    public List<SettlementResponse> getSettlementsByHousehold(@PathVariable int householdId) {
+        return getSettlementsForHousehold(householdId);
+    }
+
+    private Map<String, BigDecimal> getBalancesForHousehold(int householdId) {
+        List<User> users = getUsersForHousehold(householdId);
+        List<Expense> expenses = getExpensesForHousehold(householdId);
 
         BalanceCalculator calculator = new BalanceCalculator();
         Map<Integer, BigDecimal> balances = calculator.calculateBalances(users, expenses);
@@ -68,19 +79,9 @@ public class ExpenseController {
         return namedBalances;
     }
 
-    @GetMapping("/settlements")
-    public List<SettlementResponse> getSettlements() {
-        int householdId = 1;
-        List<User> users = userRepository.findAll().stream()
-                .filter(user -> user.getHousehold() != null && user.getHousehold().getId() == householdId)
-                .toList();
-        List<Expense> expenses = expenseRepository.findByHouseholdId(householdId);
-
-        for (Expense expense : expenses) {
-            if (expense.getSplits() == null) {
-                expense.setSplits(List.of());
-            }
-        }
+    private List<SettlementResponse> getSettlementsForHousehold(int householdId) {
+        List<User> users = getUsersForHousehold(householdId);
+        List<Expense> expenses = getExpensesForHousehold(householdId);
 
         BalanceCalculator balanceCalculator = new BalanceCalculator();
         Map<Integer, BigDecimal> balances = balanceCalculator.calculateBalances(users, expenses);
@@ -95,6 +96,24 @@ public class ExpenseController {
                         settlement.getAmount()
                 ))
                 .toList();
+    }
+
+    private List<User> getUsersForHousehold(int householdId) {
+        return userRepository.findAll().stream()
+                .filter(user -> user.getHousehold() != null && user.getHousehold().getId() == householdId)
+                .toList();
+    }
+
+    private List<Expense> getExpensesForHousehold(int householdId) {
+        List<Expense> expenses = expenseRepository.findByHouseholdId(householdId);
+
+        for (Expense expense : expenses) {
+            if (expense.getSplits() == null) {
+                expense.setSplits(List.of());
+            }
+        }
+
+        return expenses;
     }
 
     @PostMapping
