@@ -5,6 +5,7 @@ import com.flatmate.repository.ExpenseRepository;
 import com.flatmate.service.ExpenseService;
 import com.flatmate.model.User;
 import com.flatmate.repository.UserRepository;
+import com.flatmate.repository.HouseholdRepository;
 import com.flatmate.service.BalanceCalculator;
 import com.flatmate.service.SettlementCalculator;
 import com.flatmate.model.SettlementResponse;
@@ -18,6 +19,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -28,15 +31,18 @@ public class ExpenseController {
     private final ExpenseRepository expenseRepository;
     private final ExpenseService expenseService;
     private final UserRepository userRepository;
+    private final HouseholdRepository householdRepository;
 
     public ExpenseController(
             ExpenseRepository expenseRepository,
             ExpenseService expenseService,
-            UserRepository userRepository
+            UserRepository userRepository,
+            HouseholdRepository householdRepository
     ) {
         this.expenseRepository = expenseRepository;
         this.expenseService = expenseService;
         this.userRepository = userRepository;
+        this.householdRepository = householdRepository;
     }
 
     @GetMapping
@@ -65,6 +71,7 @@ public class ExpenseController {
     }
 
     private Map<String, BigDecimal> getBalancesForHousehold(int householdId) {
+        validateHouseholdExists(householdId);
         List<User> users = getUsersForHousehold(householdId);
         List<Expense> expenses = getExpensesForHousehold(householdId);
 
@@ -80,6 +87,7 @@ public class ExpenseController {
     }
 
     private List<SettlementResponse> getSettlementsForHousehold(int householdId) {
+        validateHouseholdExists(householdId);
         List<User> users = getUsersForHousehold(householdId);
         List<Expense> expenses = getExpensesForHousehold(householdId);
 
@@ -96,6 +104,12 @@ public class ExpenseController {
                         settlement.getAmount()
                 ))
                 .toList();
+    }
+
+    private void validateHouseholdExists(int householdId) {
+        if (!householdRepository.existsById(householdId)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Household not found");
+        }
     }
 
     private List<User> getUsersForHousehold(int householdId) {
