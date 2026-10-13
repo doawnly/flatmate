@@ -14,6 +14,8 @@ import com.flatmate.repository.HouseholdRepository;
 import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.math.BigDecimal;
+import com.flatmate.model.ExpenseCategory;
+import java.time.LocalDate;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.http.MediaType;
@@ -55,11 +57,13 @@ class ExpenseControllerTest {
         Expense expectedExpense = new Expense();
 
         when(expenseService.createExpense(
-                "Groceries",
-                new BigDecimal("60.00"),
-                1,
-                1,
-                splits
+                eq("Groceries"),
+                eq(new BigDecimal("60.00")),
+                eq(1),
+                eq(1),
+                eq(splits),
+                eq(ExpenseCategory.OTHER),
+                any(LocalDate.class)
         )).thenReturn(expectedExpense);
 
         CreateExpenseRequest request = new CreateExpenseRequest(
@@ -75,11 +79,68 @@ class ExpenseControllerTest {
         assertEquals(expectedExpense, result);
 
         verify(expenseService).createExpense(
-                "Groceries",
-                new BigDecimal("60.00"),
-                1,
-                1,
-                splits
+                eq("Groceries"),
+                eq(new BigDecimal("60.00")),
+                eq(1),
+                eq(1),
+                eq(splits),
+                eq(ExpenseCategory.OTHER),
+                any(LocalDate.class)
+        );
+    }
+
+    @Test
+    void shouldCreateExpenseWithCustomCategoryAndDate() throws Exception {
+        ExpenseService expenseService = mock(ExpenseService.class);
+        UserRepository userRepository = mock(UserRepository.class);
+        HouseholdRepository householdRepository = mock(HouseholdRepository.class);
+        ExpenseController controller = new ExpenseController(null, expenseService, userRepository, householdRepository);
+        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(controller)
+                .setControllerAdvice(new GlobalExceptionHandler())
+                .build();
+
+        LocalDate expenseDate = LocalDate.of(2026, 10, 1);
+        Expense expectedExpense = new Expense();
+        expectedExpense.setCategory(ExpenseCategory.GROCERIES);
+        expectedExpense.setDate(expenseDate);
+
+        when(expenseService.createExpense(
+                eq("Weekly groceries"),
+                eq(new BigDecimal("60.00")),
+                eq(1),
+                eq(1),
+                anyList(),
+                eq(ExpenseCategory.GROCERIES),
+                eq(expenseDate)
+        )).thenReturn(expectedExpense);
+
+        String requestBody = """
+            {
+              "description": "Weekly groceries",
+              "amount": 60.00,
+              "paidById": 1,
+              "householdId": 1,
+              "category": "GROCERIES",
+              "date": "2026-10-01",
+              "splits": [
+                {"userId": 1, "amountOwed": 60.00}
+              ]
+            }
+            """;
+
+        mockMvc.perform(post("/api/expenses")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isOk());
+
+        verify(expenseService).createExpense(
+                eq("Weekly groceries"),
+                eq(new BigDecimal("60.00")),
+                eq(1),
+                eq(1),
+                anyList(),
+                eq(ExpenseCategory.GROCERIES),
+                eq(expenseDate)
         );
     }
 
@@ -348,7 +409,9 @@ class ExpenseControllerTest {
                 eq(new BigDecimal("40.00")),
                 eq(1),
                 eq(1),
-                anyList()
+                anyList(),
+                eq(ExpenseCategory.OTHER),
+                any(LocalDate.class)
         )).thenReturn(expectedExpense);
 
         String requestBody = """
@@ -375,7 +438,9 @@ class ExpenseControllerTest {
                 eq(new BigDecimal("40.00")),
                 eq(1),
                 eq(1),
-                anyList()
+                anyList(),
+                eq(ExpenseCategory.OTHER),
+                any(LocalDate.class)
         );
     }
 

@@ -10,6 +10,9 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import java.time.LocalDate;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -26,6 +29,13 @@ public class Expense {
 
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal amount;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private ExpenseCategory category = ExpenseCategory.OTHER;
+
+    @Column(nullable = false)
+    private LocalDate date = LocalDate.now();
 
     @ManyToOne
     @JoinColumn(name = "paid_by", nullable = false)
@@ -105,5 +115,21 @@ public class Expense {
 
     public void setSplits(List<ExpenseSplit> splits) {
         this.splits = splits;
+    }
+
+    public ExpenseCategory getCategory() {
+        return category;
+    }
+
+    public void setCategory(ExpenseCategory category) {
+        this.category = category;
+    }
+
+    public LocalDate getDate() {
+        return date;
+    }
+
+    public void setDate(LocalDate date) {
+        this.date = date;
     }
 }

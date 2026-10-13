@@ -2,6 +2,7 @@ package com.flatmate.service;
 
 import com.flatmate.controller.ResourceNotFoundException;
 import com.flatmate.model.Expense;
+import com.flatmate.model.ExpenseCategory;
 import com.flatmate.controller.ExpenseSplitRequest;
 import com.flatmate.model.ExpenseSplit;
 import com.flatmate.model.Household;
@@ -16,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.ArrayList;
+import java.time.LocalDate;
 
 @Service
 public class ExpenseService {
@@ -44,6 +46,22 @@ public class ExpenseService {
         }
 
         return expenseRepository.findByHouseholdId(householdId);
+    }
+
+    @Transactional
+    public Expense createExpense(
+            String description,
+            BigDecimal amount,
+            int paidById,
+            int householdId,
+            List<ExpenseSplitRequest> splits,
+            ExpenseCategory category,
+            LocalDate date
+    ) {
+        Expense expense = createExpense(description, amount, paidById, householdId, splits);
+        expense.setCategory(category == null ? ExpenseCategory.OTHER : category);
+        expense.setDate(date == null ? LocalDate.now() : date);
+        return expenseRepository.save(expense);
     }
 
     @Transactional
@@ -149,6 +167,23 @@ public class ExpenseService {
         }
 
         return savedExpense;
+    }
+
+    @Transactional
+    public Expense updateExpense(
+            int expenseId,
+            String description,
+            BigDecimal amount,
+            int paidById,
+            int householdId,
+            List<ExpenseSplitRequest> splits,
+            ExpenseCategory category,
+            LocalDate date
+    ) {
+        Expense expense = updateExpense(expenseId, description, amount, paidById, householdId, splits);
+        expense.setCategory(category == null ? ExpenseCategory.OTHER : category);
+        expense.setDate(date == null ? LocalDate.now() : date);
+        return expenseRepository.save(expense);
     }
 
     @Transactional

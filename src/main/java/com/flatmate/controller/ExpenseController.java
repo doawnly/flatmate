@@ -58,7 +58,9 @@ public class ExpenseController {
                         expense.getAmount(),
                         expense.getPaidBy().getId(),
                         expense.getPaidBy().getName(),
-                        expense.getHousehold().getId()
+                        expense.getHousehold().getId(),
+                        expense.getCategory(),
+                        expense.getDate()
                 ))
                 .toList();
     }
@@ -69,7 +71,9 @@ public class ExpenseController {
             BigDecimal amount,
             int paidById,
             String paidByName,
-            int householdId
+            int householdId,
+            com.flatmate.model.ExpenseCategory category,
+            java.time.LocalDate date
     ) {}
 
     @GetMapping("/balances")
@@ -163,7 +167,9 @@ public class ExpenseController {
                 request.amount(),
                 request.paidById(),
                 request.householdId(),
-                request.splits()
+                request.splits(),
+                request.category(),
+                request.date()
         );
     }
 
@@ -180,7 +186,9 @@ public class ExpenseController {
                 request.amount(),
                 request.paidById(),
                 request.householdId(),
-                request.splits()
+                request.splits(),
+                request.category(),
+                request.date()
         );
     }
 }
