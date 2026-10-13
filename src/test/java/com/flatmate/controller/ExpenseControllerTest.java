@@ -1,5 +1,6 @@
 package com.flatmate.controller;
 
+import com.flatmate.model.ExpenseSplit;
 import com.flatmate.service.ExpenseService;
 
 import com.flatmate.controller.CreateExpenseRequest;
@@ -253,6 +254,72 @@ class ExpenseControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.Doga").value(0))
                 .andExpect(jsonPath("$.April").doesNotExist());
+
+        verify(expenseRepository).findByHouseholdId(1);
+    }
+
+    @Test
+    void shouldReturnSettlementsForHousehold() throws Exception {
+        ExpenseRepository expenseRepository = mock(ExpenseRepository.class);
+        ExpenseService expenseService = mock(ExpenseService.class);
+        UserRepository userRepository = mock(UserRepository.class);
+        HouseholdRepository householdRepository = mock(HouseholdRepository.class);
+
+        when(householdRepository.existsById(1)).thenReturn(true);
+
+        Household household = new Household();
+        household.setId(1);
+
+        User doga = new User();
+        doga.setId(1);
+        doga.setName("Doga");
+        doga.setHousehold(household);
+
+        User april = new User();
+        april.setId(2);
+        april.setName("April");
+        april.setHousehold(household);
+
+        when(userRepository.findAll()).thenReturn(List.of(doga, april));
+
+        Expense expense = new Expense();
+        expense.setId(1);
+        expense.setDescription("Dinner");
+        expense.setAmount(new BigDecimal("100.00"));
+        expense.setPaidBy(doga);
+        expense.setHousehold(household);
+
+        ExpenseSplit aprilSplit = new ExpenseSplit();
+        aprilSplit.setUser(april);
+        aprilSplit.setAmountOwed(new BigDecimal("50.00"));
+        aprilSplit.setExpense(expense);
+
+        ExpenseSplit dogaSplit = new ExpenseSplit();
+        dogaSplit.setUser(doga);
+        dogaSplit.setAmountOwed(new BigDecimal("50.00"));
+        dogaSplit.setExpense(expense);
+
+        expense.setSplits(List.of(aprilSplit, dogaSplit));
+
+        when(expenseRepository.findByHouseholdId(1))
+                .thenReturn(List.of(expense));
+
+        ExpenseController controller = new ExpenseController(
+                expenseRepository,
+                expenseService,
+                userRepository,
+                householdRepository
+        );
+
+        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(controller)
+                .setControllerAdvice(new GlobalExceptionHandler())
+                .build();
+
+        mockMvc.perform(get("/api/expenses/households/1/settlements"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].from").value("April"))
+                .andExpect(jsonPath("$[0].to").value("Doga"))
+                .andExpect(jsonPath("$[0].amount").value(50.0));
 
         verify(expenseRepository).findByHouseholdId(1);
     }
