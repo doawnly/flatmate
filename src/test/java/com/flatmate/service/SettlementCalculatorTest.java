@@ -88,4 +88,31 @@ public class SettlementCalculatorTest {
         assertTrue(found, () -> "Expected settlement: " + fromUser.getName()
                 + " pays " + toUser.getName() + " £" + expectedAmount);
     }
+
+    @Test
+    void handlesMultipleDebtorsAndCreditorsWithDifferentAmounts() {
+        User doga = new User(1, "Doga", "doga@example.com");
+        User april = new User(2, "April", "april@example.com");
+        User ecren = new User(3, "Ecren", "ecren@example.com");
+        User alex = new User(4, "Alex", "alex@example.com");
+
+        List<User> users = List.of(doga, april, ecren, alex);
+
+        Map<Integer, BigDecimal> balances = Map.of(
+                1, new BigDecimal("50.00"),
+                2, new BigDecimal("30.00"),
+                3, new BigDecimal("-60.00"),
+                4, new BigDecimal("-20.00")
+        );
+
+        SettlementCalculator calculator = new SettlementCalculator();
+        List<Settlement> settlements =
+                calculator.calculateSettlements(users, balances);
+
+        assertEquals(3, settlements.size());
+
+        assertSettlementExists(settlements, ecren, doga, "50.00");
+        assertSettlementExists(settlements, ecren, april, "10.00");
+        assertSettlementExists(settlements, alex, april, "20.00");
+    }
 }
