@@ -46,9 +46,28 @@ public class ExpenseController {
     }
 
     @GetMapping
-    public List<Expense> getAllExpenses() {
-        return expenseRepository.findAll();
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public List<ExpenseResponse> getAllExpenses() {
+        return expenseRepository.findAll().stream()
+                .map(expense -> new ExpenseResponse(
+                        expense.getId(),
+                        expense.getDescription(),
+                        expense.getAmount(),
+                        expense.getPaidBy().getId(),
+                        expense.getPaidBy().getName(),
+                        expense.getHousehold().getId()
+                ))
+                .toList();
     }
+
+    public record ExpenseResponse(
+            int id,
+            String description,
+            BigDecimal amount,
+            int paidById,
+            String paidByName,
+            int householdId
+    ) {}
 
     @GetMapping("/balances")
     public Map<String, BigDecimal> getBalances() {
