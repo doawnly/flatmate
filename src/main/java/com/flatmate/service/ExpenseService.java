@@ -66,6 +66,17 @@ public class ExpenseService {
             throw new IllegalArgumentException("At least one expense split is required");
         }
 
+        long uniqueUserCount = splits.stream()
+                .map(ExpenseSplitRequest::userId)
+                .distinct()
+                .count();
+
+        if (uniqueUserCount != splits.size()) {
+            throw new IllegalArgumentException(
+                    "A user can only appear once in an expense split"
+            );
+        }
+
         if (splits.stream().anyMatch(split ->
                 split.amountOwed() == null ||
                         split.amountOwed().compareTo(BigDecimal.ZERO) <= 0)) {

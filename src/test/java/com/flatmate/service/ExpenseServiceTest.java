@@ -496,4 +496,49 @@ class ExpenseServiceTest {
                 org.mockito.ArgumentMatchers.any(Expense.class)
         );
     }
+
+    @Test
+    void shouldRejectDuplicateUsersInExpenseSplits() {
+        ExpenseRepository expenseRepository = mock(ExpenseRepository.class);
+        UserRepository userRepository = mock(UserRepository.class);
+        HouseholdRepository householdRepository = mock(HouseholdRepository.class);
+        ExpenseSplitRepository expenseSplitRepository = mock(ExpenseSplitRepository.class);
+
+        ExpenseService service = new ExpenseService(
+                expenseRepository,
+                userRepository,
+                householdRepository,
+                expenseSplitRepository
+        );
+
+        Household household = new Household(1, "Flat 21E");
+        User doga = new User(1, "Doga", "doga@example.com");
+        doga.setHousehold(household);
+
+        when(userRepository.findById(1)).thenReturn(java.util.Optional.of(doga));
+        when(householdRepository.findById(1)).thenReturn(java.util.Optional.of(household));
+
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> service.createExpense(
+                        "Groceries",
+                        new BigDecimal("10.00"),
+                        1,
+                        1,
+                        List.of(
+                                new ExpenseSplitRequest(1, new BigDecimal("5.00")),
+                                new ExpenseSplitRequest(1, new BigDecimal("5.00"))
+                        )
+                )
+        );
+
+        assertEquals(
+                "A user can only appear once in an expense split",
+                exception.getMessage()
+        );
+
+        verify(expenseRepository, never()).save(
+                org.mockito.ArgumentMatchers.any(Expense.class)
+        );
+    }
 }
