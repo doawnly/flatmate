@@ -68,4 +68,30 @@ public class BalanceCalculatorTest {
         assertEquals(new BigDecimal("0.00"), balances.get(april.getId()));
         assertEquals(new BigDecimal("-30.00"), balances.get(ecren.getId()));
     }
+
+    @Test
+    void calculateBalances_shouldHandlePayerNotInUsersList() {
+        User doga = new User(1, "Doga", "doga@example.com");
+        User april = new User(2, "April", "april@example.com");
+
+        Expense expense = new Expense(
+                1,
+                "Dinner",
+                new BigDecimal("60.00"),
+                april,
+                List.of(
+                        new ExpenseSplit(1, doga, new BigDecimal("-30.00")),
+                        new ExpenseSplit(2, april, new BigDecimal("30.00"))
+                )
+        );
+
+        BalanceCalculator calculator = new BalanceCalculator();
+
+        Map<Integer, BigDecimal> balances = calculator.calculateBalances(
+                List.of(doga),
+                List.of(expense)
+        );
+
+        assertEquals(new BigDecimal("30.00"), balances.get(doga.getId()));
+    }
 }
