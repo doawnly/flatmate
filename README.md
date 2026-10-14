@@ -36,7 +36,7 @@ The API is built with Java and Spring Boot, persists data in PostgreSQL, and exp
 ### Prerequisites
 
 - JDK 21 or compatible Java 21 installation
-- Maven (or use the Maven Wrapper if one is included in the repository)
+- Maven 3.6+ (or use the Maven Wrapper if one is included in the repository)
 - PostgreSQL
 
 ### 1. Clone the repository
@@ -82,6 +82,8 @@ The API is served locally at `http://localhost:8080` by default.
 
 ## API Documentation
 
+The API documentation is generated from the controller annotations using OpenAPI.
+
 When the application is running, open Swagger UI to browse endpoints and send test requests:
 
 - Swagger UI: `http://localhost:8080/swagger-ui/index.html`
@@ -97,10 +99,10 @@ Run the automated test suite from the project root:
 mvn test
 ```
 
-The current test suite has **75 passing tests**.
+The current test suite has **75 passing tests** in the latest verified run.
 
 ## Project Status
 
 The current version focuses on the backend REST API, including household and user management, expense operations, balance and settlement calculations, validation, error handling, and API documentation.
 
-A frontend interface and additional household tools such as shopping lists or spending summaries may be considered as future enhancements; they are not part of the current implemented feature set.
+A frontend interface and additional household tools such as shopping lists or spending summaries are potential future enhancements and are not included in the current version.
