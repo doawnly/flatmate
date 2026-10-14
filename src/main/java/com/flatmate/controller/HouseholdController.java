@@ -9,6 +9,7 @@ import com.flatmate.repository.UserRepository;
 import com.flatmate.service.ExpenseService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Parameter;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -50,14 +51,14 @@ public class HouseholdController {
 
     @Operation(summary = "Get a household by ID", description = "Returns the household with the specified ID.")
     @GetMapping("/{id}")
-    public Household getHouseholdById(@PathVariable int id) {
+    public Household getHouseholdById(@Parameter(description = "ID of the household to retrieve", example = "1") @PathVariable int id) {
         return householdRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Household not found"));
     }
 
     @Operation(summary = "List household members", description = "Returns all users belonging to the specified household.")
     @GetMapping("/{id}/users")
-    public List<User> getUsersByHouseholdId(@PathVariable int id) {
+    public List<User> getUsersByHouseholdId(@Parameter(description = "ID of the household whose members should be listed", example = "1") @PathVariable int id) {
         householdRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Household not found"));
         return userRepository.findByHouseholdId(id);
@@ -69,12 +70,12 @@ public class HouseholdController {
     )
     @GetMapping("/{id}/expenses")
     public List<Expense> getExpensesByHouseholdId(
-            @PathVariable int id,
-            @RequestParam(required = false) ExpenseCategory category,
-            @RequestParam(required = false) LocalDate startDate,
-            @RequestParam(required = false) LocalDate endDate,
-            @RequestParam(defaultValue = "date") String sortBy,
-            @RequestParam(defaultValue = "desc") String direction
+            @Parameter(description = "ID of the household whose expenses should be listed", example = "1") @PathVariable int id,
+            @Parameter(description = "Optional category filter, such as GROCERIES or UTILITIES") @RequestParam(required = false) ExpenseCategory category,
+            @Parameter(description = "Include expenses on or after this date (YYYY-MM-DD)", example = "2026-10-01") @RequestParam(required = false) LocalDate startDate,
+            @Parameter(description = "Include expenses on or before this date (YYYY-MM-DD)", example = "2026-10-31") @RequestParam(required = false) LocalDate endDate,
+            @Parameter(description = "Sort field: date or amount", example = "date") @RequestParam(defaultValue = "date") String sortBy,
+            @Parameter(description = "Sort direction: asc or desc", example = "desc") @RequestParam(defaultValue = "desc") String direction
     ) {
         if (startDate != null && endDate != null && startDate.isAfter(endDate)) {
             throw new ResponseStatusException(

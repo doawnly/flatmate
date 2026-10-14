@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Parameter;
 @Tag(name = "Users", description = "Manage flatmates and their household membership")
 @RestController
 @RequestMapping("/api/users")
@@ -40,7 +41,7 @@ public class UserController {
 
     @Operation(summary = "Get a user by ID", description = "Returns the user with the specified ID, or a not-found error if no such user exists.")
     @GetMapping("/{id}")
-    public User getUserById(@PathVariable int id) {
+    public User getUserById(@Parameter(description = "ID of the user to retrieve", example = "1") @PathVariable int id) {
         return userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
     }
