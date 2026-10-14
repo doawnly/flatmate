@@ -18,6 +18,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.ArrayList;
 import java.time.LocalDate;
+import org.springframework.data.domain.Sort;
 
 @Service
 public class ExpenseService {
@@ -46,6 +47,25 @@ public class ExpenseService {
         }
 
         return expenseRepository.findByHouseholdId(householdId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Expense> getExpensesByHouseholdId(
+            int householdId,
+            ExpenseCategory category,
+            LocalDate startDate,
+            LocalDate endDate,
+            Sort sort
+    ) {
+        if (!householdRepository.existsById(householdId)) {
+            throw new ResourceNotFoundException("Household not found: " + householdId);
+        }
+
+        if (startDate != null && endDate != null && startDate.isAfter(endDate)) {
+            throw new IllegalArgumentException("startDate must be on or before endDate");
+        }
+
+        return expenseRepository.findByFilters(householdId, category, startDate, endDate, sort);
     }
 
     @Transactional
