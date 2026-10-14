@@ -2,15 +2,18 @@ package com.flatmate.controller;
 
 import com.flatmate.model.Household;
 import com.flatmate.model.User;
+import com.flatmate.model.ExpenseCategory;
 import com.flatmate.repository.HouseholdRepository;
 import com.flatmate.repository.UserRepository;
 import com.flatmate.service.ExpenseService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -144,6 +147,64 @@ class HouseholdControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(content().json("[]"));
 
-        verify(expenseService).getExpensesByHouseholdId(1);
+        verify(expenseService).getExpensesByHouseholdId(
+                1,
+                null,
+                null,
+                null,
+                Sort.by(Sort.Direction.DESC, "date")
+        );
+    }
+
+    @Test
+    void shouldPassCategoryDateFiltersAndSortingToExpenseService() throws Exception {
+        mockMvc.perform(get("/api/households/1/expenses")
+                        .param("category", "GROCERIES")
+                        .param("startDate", "2026-10-01")
+                        .param("endDate", "2026-10-13")
+                        .param("sortBy", "amount")
+                        .param("direction", "asc")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content().json("[]"));
+
+        verify(expenseService).getExpensesByHouseholdId(
+                1,
+                ExpenseCategory.GROCERIES,
+                LocalDate.parse("2026-10-01"),
+                LocalDate.parse("2026-10-13"),
+                Sort.by(Sort.Direction.ASC, "amount")
+        );
+    }
+
+    @Test
+    void shouldReturn400WhenStartDateIsAfterEndDate() throws Exception {
+        mockMvc.perform(get("/api/households/1/expenses")
+                        .param("startDate", "2026-10-13")
+                        .param("endDate", "2026-10-01")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(expenseService);
+    }
+
+    @Test
+    void shouldReturn400WhenSortByIsUnsupported() throws Exception {
+        mockMvc.perform(get("/api/households/1/expenses")
+                        .param("sortBy", "description")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(expenseService);
+    }
+
+    @Test
+    void shouldReturn400WhenSortDirectionIsUnsupported() throws Exception {
+        mockMvc.perform(get("/api/households/1/expenses")
+                        .param("direction", "sideways")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(expenseService);
     }
 }

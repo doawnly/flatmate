@@ -6,11 +6,15 @@ import com.flatmate.model.Expense;
 import com.flatmate.model.Household;
 import com.flatmate.model.User;
 import com.flatmate.model.ExpenseSplit;
+import com.flatmate.model.ExpenseCategory;
 import com.flatmate.repository.ExpenseRepository;
 import com.flatmate.repository.ExpenseSplitRepository;
 import com.flatmate.repository.HouseholdRepository;
 import com.flatmate.repository.UserRepository;
 import org.junit.jupiter.api.Test;
+import org.springframework.data.domain.Sort;
+
+import java.time.LocalDate;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -117,6 +121,114 @@ class ExpenseServiceTest {
         assertEquals(expectedExpenses, result);
         verify(householdRepository).existsById(1);
         verify(expenseRepository).findByHouseholdId(1);
+    }
+
+    @Test
+    void shouldReturnFilteredExpensesForExistingHousehold() {
+        ExpenseRepository expenseRepository = mock(ExpenseRepository.class);
+        UserRepository userRepository = mock(UserRepository.class);
+        HouseholdRepository householdRepository = mock(HouseholdRepository.class);
+        ExpenseSplitRepository expenseSplitRepository = mock(ExpenseSplitRepository.class);
+
+        ExpenseService service = new ExpenseService(
+                expenseRepository,
+                userRepository,
+                householdRepository,
+                expenseSplitRepository
+        );
+
+        ExpenseCategory category = ExpenseCategory.GROCERIES;
+        LocalDate startDate = LocalDate.parse("2026-10-01");
+        LocalDate endDate = LocalDate.parse("2026-10-13");
+        Sort sort = Sort.by(Sort.Direction.ASC, "amount");
+        List<Expense> expectedExpenses = List.of();
+
+        when(householdRepository.existsById(1)).thenReturn(true);
+        when(expenseRepository.findByFilters(1, category, startDate, endDate, sort))
+                .thenReturn(expectedExpenses);
+
+        List<Expense> result = service.getExpensesByHouseholdId(
+                1, category, startDate, endDate, sort
+        );
+
+        assertEquals(expectedExpenses, result);
+        verify(householdRepository).existsById(1);
+        verify(expenseRepository).findByFilters(1, category, startDate, endDate, sort);
+    }
+
+    @Test
+    void shouldRejectFilteredExpensesWhenStartDateIsAfterEndDate() {
+        ExpenseRepository expenseRepository = mock(ExpenseRepository.class);
+        UserRepository userRepository = mock(UserRepository.class);
+        HouseholdRepository householdRepository = mock(HouseholdRepository.class);
+        ExpenseSplitRepository expenseSplitRepository = mock(ExpenseSplitRepository.class);
+
+        ExpenseService service = new ExpenseService(
+                expenseRepository,
+                userRepository,
+                householdRepository,
+                expenseSplitRepository
+        );
+
+        when(householdRepository.existsById(1)).thenReturn(true);
+
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> service.getExpensesByHouseholdId(
+                        1,
+                        null,
+                        LocalDate.parse("2026-10-13"),
+                        LocalDate.parse("2026-10-01"),
+                        Sort.by(Sort.Direction.DESC, "date")
+                )
+        );
+
+        assertEquals("startDate must be on or before endDate", exception.getMessage());
+        verify(expenseRepository, never()).findByFilters(
+                org.mockito.ArgumentMatchers.eq(1),
+                org.mockito.ArgumentMatchers.isNull(),
+                org.mockito.ArgumentMatchers.any(LocalDate.class),
+                org.mockito.ArgumentMatchers.any(LocalDate.class),
+                org.mockito.ArgumentMatchers.any(Sort.class)
+        );
+    }
+
+    @Test
+    void shouldRejectFilteredExpensesForNonexistentHousehold() {
+        ExpenseRepository expenseRepository = mock(ExpenseRepository.class);
+        UserRepository userRepository = mock(UserRepository.class);
+        HouseholdRepository householdRepository = mock(HouseholdRepository.class);
+        ExpenseSplitRepository expenseSplitRepository = mock(ExpenseSplitRepository.class);
+
+        ExpenseService service = new ExpenseService(
+                expenseRepository,
+                userRepository,
+                householdRepository,
+                expenseSplitRepository
+        );
+
+        when(householdRepository.existsById(999)).thenReturn(false);
+
+        ResourceNotFoundException exception = assertThrows(
+                ResourceNotFoundException.class,
+                () -> service.getExpensesByHouseholdId(
+                        999,
+                        ExpenseCategory.GROCERIES,
+                        LocalDate.parse("2026-10-01"),
+                        LocalDate.parse("2026-10-13"),
+                        Sort.by(Sort.Direction.ASC, "amount")
+                )
+        );
+
+        assertEquals("Household not found: 999", exception.getMessage());
+        verify(householdRepository).existsById(999);
+        verify(expenseRepository, never()).findByFilters(
+                org.mockito.ArgumentMatchers.anyInt(),
+                org.mockito.ArgumentMatchers.any(ExpenseCategory.class),
+                org.mockito.ArgumentMatchers.any(LocalDate.class),
+                org.mockito.ArgumentMatchers.any(LocalDate.class),
+                org.mockito.ArgumentMatchers.any(Sort.class)
+        );
     }
 
     @Test
