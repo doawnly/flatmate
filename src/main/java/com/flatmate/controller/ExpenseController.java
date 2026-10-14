@@ -174,6 +174,22 @@ public class ExpenseController {
         return expenses;
     }
 
+    @Operation(summary = "Get an expense by ID", description = "Returns the details of a single expense.")
+    @ApiResponse(responseCode = "200", description = "Expense retrieved successfully")
+    @ApiResponse(responseCode = "404", description = "Expense not found")
+    @GetMapping("/{expenseId}")
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public Expense getExpenseById(
+            @Parameter(description = "ID of the expense to retrieve", example = "1")
+            @PathVariable int expenseId
+    ) {
+        return expenseRepository.findById(expenseId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Expense not found: " + expenseId
+                ));
+    }
+
     @Operation(summary = "Update an expense", description = "Updates an existing expense using the supplied expense details and splits.")
     @ApiResponse(responseCode = "200", description = "Expense updated successfully")
     @ApiResponse(responseCode = "400", description = "Invalid expense data")
