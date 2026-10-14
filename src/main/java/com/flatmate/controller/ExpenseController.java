@@ -27,6 +27,12 @@ import org.springframework.http.ResponseEntity;
 
 import java.util.List;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+
+@Tag(name = "Expenses", description = "Create, view, update, and delete expenses, and calculate household balances and settlements.")
 @RestController
 @RequestMapping("/api/expenses")
 public class ExpenseController {
@@ -48,6 +54,8 @@ public class ExpenseController {
         this.householdRepository = householdRepository;
     }
 
+    @Operation(summary = "List all expenses", description = "Returns all expenses with payer, household, category, and date information.")
+    @ApiResponse(responseCode = "200", description = "Expenses retrieved successfully")
     @GetMapping
     @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public List<ExpenseResponse> getAllExpenses() {
@@ -76,23 +84,33 @@ public class ExpenseController {
             java.time.LocalDate date
     ) {}
 
+    @Operation(summary = "Get default household balances", description = "Returns the calculated balances for household 1.")
+    @ApiResponse(responseCode = "200", description = "Balances calculated successfully")
     @GetMapping("/balances")
     public Map<String, BigDecimal> getBalances() {
         return getBalancesForHousehold(1);
     }
 
+    @Operation(summary = "Get default household settlements", description = "Returns suggested repayments for household 1.")
+    @ApiResponse(responseCode = "200", description = "Settlements calculated successfully")
     @GetMapping("/settlements")
     public List<SettlementResponse> getSettlements() {
         return getSettlementsForHousehold(1);
     }
 
+    @Operation(summary = "Get household balances", description = "Calculates how much each user in the specified household owes or is owed.")
+    @ApiResponse(responseCode = "200", description = "Balances calculated successfully")
+    @ApiResponse(responseCode = "404", description = "Household not found")
     @GetMapping("/households/{householdId}/balances")
-    public Map<String, BigDecimal> getBalancesByHousehold(@PathVariable int householdId) {
+    public Map<String, BigDecimal> getBalancesByHousehold(@Parameter(description = "ID of the household to calculate balances for", example = "1") @PathVariable int householdId) {
         return getBalancesForHousehold(householdId);
     }
 
+    @Operation(summary = "Get household settlements", description = "Returns suggested repayments that settle the specified household's balances.")
+    @ApiResponse(responseCode = "200", description = "Settlements calculated successfully")
+    @ApiResponse(responseCode = "404", description = "Household not found")
     @GetMapping("/households/{householdId}/settlements")
-    public List<SettlementResponse> getSettlementsByHousehold(@PathVariable int householdId) {
+    public List<SettlementResponse> getSettlementsByHousehold(@Parameter(description = "ID of the household to calculate settlements for", example = "1") @PathVariable int householdId) {
         return getSettlementsForHousehold(householdId);
     }
 
@@ -156,9 +174,13 @@ public class ExpenseController {
         return expenses;
     }
 
+    @Operation(summary = "Update an expense", description = "Updates an existing expense using the supplied expense details and splits.")
+    @ApiResponse(responseCode = "200", description = "Expense updated successfully")
+    @ApiResponse(responseCode = "400", description = "Invalid expense data")
+    @ApiResponse(responseCode = "404", description = "Expense, payer, or household not found")
     @PutMapping("/{expenseId}")
     public Expense updateExpense(
-            @PathVariable int expenseId,
+            @Parameter(description = "ID of the expense to update", example = "1") @PathVariable int expenseId,
             @Valid @RequestBody CreateExpenseRequest request
     ) {
         return expenseService.updateExpense(
@@ -173,12 +195,19 @@ public class ExpenseController {
         );
     }
 
+    @Operation(summary = "Delete an expense", description = "Deletes the specified expense and returns HTTP 204 when successful.")
+    @ApiResponse(responseCode = "204", description = "Expense deleted successfully")
+    @ApiResponse(responseCode = "404", description = "Expense not found")
     @DeleteMapping("/{expenseId}")
-    public ResponseEntity<Void> deleteExpense(@PathVariable int expenseId) {
+    public ResponseEntity<Void> deleteExpense(@Parameter(description = "ID of the expense to delete", example = "1") @PathVariable int expenseId) {
         expenseService.deleteExpense(expenseId);
         return ResponseEntity.noContent().build();
     }
 
+    @Operation(summary = "Create an expense", description = "Creates an expense with its payer, household, category, date, and split details.")
+    @ApiResponse(responseCode = "200", description = "Expense created successfully")
+    @ApiResponse(responseCode = "400", description = "Invalid expense data or split amounts")
+    @ApiResponse(responseCode = "404", description = "Payer or household not found")
     @PostMapping
     public Expense createExpense(@Valid @RequestBody CreateExpenseRequest request) {
         return expenseService.createExpense(

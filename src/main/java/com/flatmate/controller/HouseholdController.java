@@ -7,6 +7,8 @@ import com.flatmate.model.ExpenseCategory;
 import com.flatmate.repository.HouseholdRepository;
 import com.flatmate.repository.UserRepository;
 import com.flatmate.service.ExpenseService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,6 +23,7 @@ import java.time.LocalDate;
 
 import java.util.List;
 
+@Tag(name = "Households", description = "Manage households, members, and household expenses")
 @RestController
 @RequestMapping("/api/households")
 public class HouseholdController {
@@ -39,17 +42,20 @@ public class HouseholdController {
         this.expenseService = expenseService;
     }
 
+    @Operation(summary = "List all households", description = "Returns all households.")
     @GetMapping
     public List<Household> getAllHouseholds() {
         return householdRepository.findAll();
     }
 
+    @Operation(summary = "Get a household by ID", description = "Returns the household with the specified ID.")
     @GetMapping("/{id}")
     public Household getHouseholdById(@PathVariable int id) {
         return householdRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Household not found"));
     }
 
+    @Operation(summary = "List household members", description = "Returns all users belonging to the specified household.")
     @GetMapping("/{id}/users")
     public List<User> getUsersByHouseholdId(@PathVariable int id) {
         householdRepository.findById(id)
@@ -57,6 +63,10 @@ public class HouseholdController {
         return userRepository.findByHouseholdId(id);
     }
 
+    @Operation(
+            summary = "List household expenses",
+            description = "Returns expenses for the specified household. Optional filters: category, startDate, and endDate. Results can be sorted by date or amount using sortBy, with direction set to asc or desc."
+    )
     @GetMapping("/{id}/expenses")
     public List<Expense> getExpensesByHouseholdId(
             @PathVariable int id,
@@ -96,6 +106,7 @@ public class HouseholdController {
         return expenseService.getExpensesByHouseholdId(id, category, startDate, endDate, sort);
     }
 
+    @Operation(summary = "Create a household", description = "Creates and returns a new household.")
     @PostMapping
     public Household createHousehold(@RequestBody Household household) {
         return householdRepository.save(household);

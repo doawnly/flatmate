@@ -17,6 +17,9 @@ import com.flatmate.repository.HouseholdRepository;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+@Tag(name = "Users", description = "Manage flatmates and their household membership")
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
@@ -29,17 +32,20 @@ public class UserController {
         this.householdRepository = householdRepository;
     }
 
+    @Operation(summary = "List all users", description = "Returns all users registered in the application.")
     @GetMapping
     public List<User> getAllUsers() {
         return userRepository.findAll();
     }
 
+    @Operation(summary = "Get a user by ID", description = "Returns the user with the specified ID, or a not-found error if no such user exists.")
     @GetMapping("/{id}")
     public User getUserById(@PathVariable int id) {
         return userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
     }
 
+    @Operation(summary = "Create a user", description = "Creates a user in an existing household. The email must be unique, and the request must include valid user details and a household ID.")
     @PostMapping
     public User createUser(@Valid @RequestBody CreateUserRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
