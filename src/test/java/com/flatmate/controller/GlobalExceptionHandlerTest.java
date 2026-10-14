@@ -109,4 +109,24 @@ class GlobalExceptionHandlerTest {
                 response.getBody().message()
         );
     }
+
+    @Test
+    void shouldReturnInternalServerErrorForUnexpectedException() {
+        RuntimeException exception =
+                new RuntimeException("Sensitive internal details");
+
+        ResponseEntity<ApiError> response =
+                handler.handleUnexpectedException(exception);
+
+        assertEquals(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                response.getStatusCode()
+        );
+        assertEquals(500, response.getBody().status());
+        assertEquals("Internal Server Error", response.getBody().error());
+        assertEquals(
+                "An unexpected error occurred",
+                response.getBody().message()
+        );
+    }
 }

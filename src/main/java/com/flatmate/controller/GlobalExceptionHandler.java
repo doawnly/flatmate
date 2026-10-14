@@ -97,4 +97,25 @@ public class GlobalExceptionHandler {
                 .status(HttpStatus.BAD_REQUEST)
                 .body(error);
     }
+    @ExceptionHandler(Exception.class)
+
+    public ResponseEntity<ApiError> handleUnexpectedException(Exception exception) {
+
+        ApiError error = new ApiError(
+
+                HttpStatus.INTERNAL_SERVER_ERROR.value(),
+
+                HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(),
+
+                "An unexpected error occurred"
+
+        );
+
+        return ResponseEntity
+
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+
+                .body(error);
+
+    }
 }
