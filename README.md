@@ -48,9 +48,27 @@ cd flatmate
 
 ### 2. Configure the database
 
-Create a PostgreSQL database for the application. Configure the database URL, username, and password using the application's existing Spring configuration or environment variables. Do not commit real database credentials to GitHub.
+Create a PostgreSQL database named `flatmate`. The application reads its database settings from environment variables, so credentials do not need to be stored in the source code.
 
-Check `src/main/resources/application.properties` (or the corresponding configuration file in the project) to see which property names the application currently expects.
+Set these environment variables before starting the application:
+
+| Variable | Purpose | Example |
+| --- | --- | --- |
+| `DB_URL` | JDBC URL for your PostgreSQL database | `jdbc:postgresql://localhost:5432/flatmate` |
+| `DB_USERNAME` | PostgreSQL username | `your_postgres_username` |
+| `DB_PASSWORD` | PostgreSQL password | `your_postgres_password` |
+
+`DB_URL` is optional because the application defaults to `jdbc:postgresql://localhost:5432/flatmate`. `DB_USERNAME` and `DB_PASSWORD` must be set to credentials that work for your PostgreSQL setup.
+
+For example, on macOS or Linux, you can export the variables in the terminal before running the application:
+
+```bash
+export DB_URL="jdbc:postgresql://localhost:5432/flatmate"
+export DB_USERNAME="your_postgres_username"
+export DB_PASSWORD="your_postgres_password"
+```
+
+Replace the example values with your own local PostgreSQL settings. Do not commit real credentials to GitHub. In IntelliJ IDEA, you can set the same variables in your Spring Boot run configuration under **Environment variables**.
 
 ### 3. Run the application
 
