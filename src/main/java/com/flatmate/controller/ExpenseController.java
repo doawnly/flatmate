@@ -24,6 +24,7 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 
 import java.util.List;
 
@@ -33,6 +34,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 
 @Tag(name = "Expenses", description = "Create, view, update, and delete expenses, and calculate household balances and settlements.")
+@CrossOrigin(origins = "http://localhost:5173")
 @RestController
 @RequestMapping("/api/expenses")
 public class ExpenseController {
