@@ -221,19 +221,19 @@ button {
 }
 
 .page-content {
-  width: min(1120px, 85.6%);
+  width: min(1160px, 88%);
   margin: 0 auto;
-  padding: 52px 0 26px;
+  padding: 38px 0 30px;
 }
 
 /* Welcome area */
 .welcome-section {
-  min-height: 285px;
-  padding: 38px 48px;
+  min-height: 250px;
+  padding: 32px 42px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 36px;
+  gap: 30px;
   overflow: hidden;
   position: relative;
   border: 1px solid #e7ebe1;
@@ -383,7 +383,7 @@ button {
 
 /* Section headings and household summary */
 .section-heading {
-  margin: 38px 0 17px;
+  margin: 30px 0 15px;
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
@@ -433,12 +433,18 @@ button {
 }
 
 .summary-card {
-  min-height: 158px;
-  padding: 21px 23px;
+  min-height: 148px;
+  padding: 19px 21px;
   border: 1px solid #e8ebe4;
   border-radius: 18px;
   background: #fffefa;
   box-shadow: 0 5px 18px rgb(39 59 45 / 3%);
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.summary-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px rgb(39 59 45 / 7%);
 }
 
 .summary-card-top {
@@ -1038,4 +1044,532 @@ button {
 .add-expense-modal > .intro-text {
   max-width: none;
   text-align: center;
+}
+
+/* Balance overview and visual settlement chart */
+.balance-overview-section {
+  margin-top: 30px;
+}
+
+.balance-overview-heading {
+  margin-bottom: 17px;
+}
+
+.balance-overview-description {
+  margin: 8px 0 0;
+  color: #819084;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.balance-overview-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.balance-person-card {
+  min-width: 0;
+  padding: 19px;
+  border: 1px solid #e8ebe4;
+  border-radius: 17px;
+  background: #fffefa;
+  box-shadow: 0 5px 18px rgb(39 59 45 / 3%);
+}
+
+.balance-person-card.owes-you {
+  border-color: #e8c9c4;
+  background: #fffaf8;
+}
+
+.balance-person-card.you-owe {
+  border-color: #cfe2d3;
+  background: #fafffa;
+}
+
+.balance-person-card.settled {
+  border-color: #e8ebe4;
+}
+
+.balance-person-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.balance-person-name {
+  overflow: hidden;
+  color: #394b3e;
+  font-size: 13px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.balance-status-dot {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 8px;
+  border-radius: 50%;
+  background: #a2aaa0;
+}
+
+.balance-status-dot.positive {
+  background: #4d8b65;
+}
+
+.balance-status-dot.negative {
+  background: #d17a70;
+}
+
+.balance-person-amount {
+  margin: 20px 0 5px;
+  color: #303b32;
+  font-size: clamp(23px, 2.5vw, 30px);
+  font-weight: 750;
+  letter-spacing: -0.8px;
+  font-variant-numeric: tabular-nums;
+}
+
+.balance-person-card.owes-you .balance-person-amount {
+  color: #b65e55;
+}
+
+.balance-person-card.you-owe .balance-person-amount {
+  color: #39734f;
+}
+
+.balance-person-caption {
+  margin: 0;
+  color: #818b80;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.balance-chart-card {
+  margin-top: 18px;
+  padding: 24px;
+  border: 1px solid #e8ebe4;
+  border-radius: 18px;
+  background: #fffefa;
+  box-shadow: 0 5px 18px rgb(39 59 45 / 3%);
+}
+
+.balance-chart-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 24px;
+}
+
+.balance-chart-heading h3 {
+  margin: 0;
+  color: #2b3c31;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.balance-chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 13px;
+  color: #78847a;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.balance-chart-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.balance-chart-legend i {
+  width: 8px;
+  height: 8px;
+  display: inline-block;
+  border-radius: 3px;
+}
+
+.legend-positive {
+  background: #4d8b65;
+}
+
+.legend-negative {
+  background: #d17a70;
+}
+
+.balance-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 19px;
+}
+
+.balance-chart-row {
+  display: grid;
+  grid-template-columns: minmax(70px, 0.7fr) minmax(0, 3fr) minmax(78px, 0.8fr);
+  align-items: center;
+  gap: 14px;
+}
+
+.balance-chart-name {
+  overflow: hidden;
+  color: #526257;
+  font-size: 12px;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.balance-chart-track {
+  height: 24px;
+  position: relative;
+  overflow: hidden;
+  border-radius: 7px;
+  background: #f0f0e8;
+}
+
+.balance-chart-zero-line {
+  width: 1px;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 50%;
+  z-index: 2;
+  background: #c7cec2;
+}
+
+.balance-chart-bar {
+  height: 14px;
+  position: absolute;
+  top: 5px;
+  border-radius: 4px;
+  transition: width 220ms ease;
+}
+
+.balance-chart-bar-positive {
+  left: 50%;
+  background: #4d8b65;
+}
+
+.balance-chart-bar-negative {
+  right: 50%;
+  background: #d17a70;
+}
+
+.balance-chart-value {
+  color: #68766b;
+  font-size: 12px;
+  font-weight: 750;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.balance-chart-value.positive {
+  color: #39734f;
+}
+
+.balance-chart-value.negative {
+  color: #b65e55;
+}
+
+.balance-chart-note {
+  margin: 21px 0 0;
+  color: #89958a;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.balance-chart-state {
+  padding: 20px 0;
+  color: #819084;
+  font-size: 12px;
+  text-align: center;
+}
+
+@media (max-width: 760px) {
+  .balance-overview-cards {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 11px;
+  }
+
+  .balance-person-card {
+    padding: 16px 18px;
+  }
+
+  .balance-person-amount {
+    margin-top: 13px;
+  }
+
+  .balance-chart-card {
+    padding: 19px;
+  }
+
+  .balance-chart-heading {
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .balance-chart-row {
+    grid-template-columns: minmax(58px, 0.8fr) minmax(0, 2fr) minmax(68px, 0.8fr);
+    gap: 9px;
+  }
+
+  .balance-chart-name,
+  .balance-chart-value {
+    font-size: 11px;
+  }
+}
+/* Keep section titles and supporting text on the left, badges on the right */
+.section-heading,
+.balance-overview-heading {
+  text-align: left;
+}
+
+.section-heading {
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.balance-overview-heading {
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.section-heading > div,
+.balance-overview-heading > div {
+  min-width: 0;
+  text-align: left;
+}
+
+.section-heading .eyebrow,
+.section-card-heading .eyebrow,
+.balance-overview-heading .eyebrow,
+.balance-overview-heading .balance-overview-description {
+  text-align: left;
+}
+
+/* Expense Edit and Delete actions */
+.expense-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-shrink: 0;
+  gap: 7px;
+}
+
+.expense-edit-button,
+.expense-delete-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  padding: 7px 11px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: #f0f3ed;
+  color: #4c6853;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+  transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+
+.expense-edit-button {
+  border-color: #dce6d9;
+  background: #f5f8f2;
+  color: #41674a;
+}
+
+.expense-edit-button:hover {
+  border-color: #bfd2bd;
+  background: #eaf2e6;
+  color: #315d49;
+}
+
+.expense-delete-button {
+  border-color: #f0d9d5;
+  background: #fff7f5;
+  color: #b65e55;
+}
+
+.expense-delete-button:hover {
+  border-color: #e7bdb6;
+  background: #fceae7;
+  color: #9e463e;
+}
+
+.expense-edit-button:focus-visible,
+.expense-delete-button:focus-visible {
+  outline: 3px solid rgb(100 129 106 / 25%);
+  outline-offset: 2px;
+}
+
+.expense-edit-button:disabled,
+.expense-delete-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+@media (max-width: 520px) {
+  .expense-actions {
+    gap: 5px;
+  }
+
+  .expense-edit-button,
+  .expense-delete-button {
+    min-height: 30px;
+    padding: 6px 8px;
+    font-size: 10px;
+  }
+}
+
+
+/* Spending analytics */
+.analytics-section {
+  margin: 34px 0;
+}
+
+.analytics-heading {
+  align-items: flex-start;
+  margin-bottom: 18px;
+}
+
+.analytics-description {
+  margin: 8px 0 0;
+  color: #819084;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.analytics-state {
+  padding: 20px 0;
+  color: #819084;
+  font-size: 12px;
+}
+
+.analytics-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.analytics-total-card,
+.analytics-count-card {
+  min-width: 0;
+}
+
+.analytics-chart-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  align-items: stretch;
+}
+
+.analytics-chart-card {
+  min-width: 0;
+  padding: 24px;
+  border: 1px solid #e8ebe4;
+  border-radius: 18px;
+  background: #fffefa;
+  box-shadow: 0 5px 18px rgb(39 59 45 / 3%);
+}
+
+.analytics-chart-card .section-card-heading {
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+.analytics-chart-card .section-card-heading h3 {
+  margin: 0;
+  color: #2b3c31;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+
+.analytics-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.analytics-bar-row {
+  min-width: 0;
+}
+
+.analytics-bar-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 9px;
+  color: #526257;
+  font-size: 12px;
+}
+
+.analytics-bar-label span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.analytics-bar-label strong {
+  flex-shrink: 0;
+  color: #2b4033;
+  font-size: 12px;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+}
+
+.analytics-bar-track {
+  width: 100%;
+  height: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #edf0e9;
+}
+
+.analytics-bar-fill {
+  height: 100%;
+  min-width: 3px;
+  border-radius: 999px;
+  transition: width 250ms ease;
+}
+
+.category-bar-fill {
+  background: #78966e;
+}
+
+.monthly-bar-fill {
+  background: #d4a45f;
+}
+
+.analytics-empty-note {
+  margin: 0;
+  color: #819084;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+@media (max-width: 760px) {
+  .analytics-summary-grid,
+  .analytics-chart-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .analytics-heading {
+    gap: 12px;
+  }
+
+  .analytics-chart-card {
+    padding: 19px;
+  }
 }

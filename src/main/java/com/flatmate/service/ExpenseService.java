@@ -18,6 +18,10 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.ArrayList;
 import java.time.LocalDate;
+import java.time.YearMonth;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.TreeMap;
 import org.springframework.data.domain.Sort;
 
 @Service
@@ -323,5 +327,49 @@ public class ExpenseService {
 
         expenseSplitRepository.deleteAll(expenseSplitRepository.findByExpenseId(expenseId));
         expenseRepository.delete(expense);
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> getSpendingAnalytics(
+            int householdId,
+            LocalDate startDate,
+            LocalDate endDate
+    ) {
+        List<Expense> expenses = getExpensesByHouseholdId(
+                householdId,
+                null,
+                startDate,
+                endDate,
+                Sort.by(Sort.Direction.ASC, "date")
+        );
+
+        BigDecimal totalSpending = BigDecimal.ZERO;
+        Map<String, BigDecimal> categoryTotals = new TreeMap<>();
+        Map<String, BigDecimal> monthlyTotals = new TreeMap<>();
+
+        for (Expense expense : expenses) {
+            BigDecimal amount = expense.getAmount();
+            totalSpending = totalSpending.add(amount);
+
+            String category = expense.getCategory() == null
+                    ? ExpenseCategory.OTHER.name()
+                    : expense.getCategory().name();
+            categoryTotals.merge(category, amount, BigDecimal::add);
+
+            if (expense.getDate() != null) {
+                String month = YearMonth.from(expense.getDate()).toString();
+                monthlyTotals.merge(month, amount, BigDecimal::add);
+            }
+        }
+
+        Map<String, Object> analytics = new LinkedHashMap<>();
+        analytics.put("householdId", householdId);
+        analytics.put("startDate", startDate);
+        analytics.put("endDate", endDate);
+        analytics.put("totalSpending", totalSpending);
+        analytics.put("expenseCount", expenses.size());
+        analytics.put("categoryTotals", categoryTotals);
+        analytics.put("monthlyTotals", monthlyTotals);
+        return analytics;
     }
 }

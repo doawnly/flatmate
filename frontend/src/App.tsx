@@ -12,6 +12,17 @@ function App() {
   const [newExpenseSplits, setNewExpenseSplits] = useState<Record<string, boolean>>({ '1': true, '2': true, '3': true })
   const [expenseSubmitting, setExpenseSubmitting] = useState(false)
   const [expenseSubmitError, setExpenseSubmitError] = useState('')
+  const [editingExpenseId, setEditingExpenseId] = useState<number | null>(null)
+  const [editExpenseDescription, setEditExpenseDescription] = useState('')
+  const [editExpenseAmount, setEditExpenseAmount] = useState('')
+  const [editExpensePaidBy, setEditExpensePaidBy] = useState('1')
+  const [editExpenseCategory, setEditExpenseCategory] = useState('OTHER')
+  const [editExpenseDate, setEditExpenseDate] = useState(new Date().toISOString().slice(0, 10))
+  const [editExpenseSplits, setEditExpenseSplits] = useState<Record<string, boolean>>({ '1': true, '2': true, '3': true })
+  const [editExpenseSubmitting, setEditExpenseSubmitting] = useState(false)
+  const [editExpenseError, setEditExpenseError] = useState('')
+  const [deletingExpenseId, setDeletingExpenseId] = useState<number | null>(null)
+  const [expenseActionError, setExpenseActionError] = useState('')
 
   const [expenses, setExpenses] = useState<{
     id: number
@@ -27,6 +38,20 @@ function App() {
   const [balances, setBalances] = useState<Record<string, number | string>>({})
   const [balancesLoading, setBalancesLoading] = useState(true)
   const [balancesError, setBalancesError] = useState(false)
+
+  type SpendingAnalytics = {
+    householdId: number
+    startDate: string | null
+    endDate: string | null
+    totalSpending: number
+    expenseCount: number
+    categoryTotals: Record<string, number>
+    monthlyTotals: Record<string, number>
+  }
+
+  const [analytics, setAnalytics] = useState<SpendingAnalytics | null>(null)
+  const [analyticsLoading, setAnalyticsLoading] = useState(true)
+  const [analyticsError, setAnalyticsError] = useState(false)
 
   useEffect(() => {
     fetch('http://localhost:8080/api/expenses')
@@ -71,8 +96,57 @@ function App() {
       })
   }, [])
 
+  useEffect(() => {
+    fetch('http://localhost:8080/api/expenses/analytics?householdId=1')
+      .then((response) => {
+        if (!response.ok) throw new Error('Could not load spending analytics')
+        return response.json()
+      })
+      .then((data: SpendingAnalytics) => {
+        setAnalytics(data)
+        setAnalyticsLoading(false)
+      })
+      .catch(() => {
+        setAnalyticsError(true)
+        setAnalyticsLoading(false)
+      })
+  }, [])
+
   const totalSpending = expenses.reduce((total, expense) => total + expense.amount, 0)
   const dogaBalance = Number(balances['Doga'] ?? 0)
+
+  const housemateBalances = [
+    { name: 'Doga', initial: 'D', balance: Number(balances['Doga'] ?? 0), avatarClass: 'avatar-one' },
+    { name: 'April', initial: 'A', balance: Number(balances['April'] ?? 0), avatarClass: 'avatar-two' },
+    { name: 'Ecren', initial: 'E', balance: Number(balances['Ecren'] ?? 0), avatarClass: 'avatar-three' },
+  ]
+  const largestAbsoluteBalance = Math.max(...housemateBalances.map((housemate) => Math.abs(housemate.balance)), 1)
+
+  const categoryEntries = Object.entries(analytics?.categoryTotals ?? {}).sort((a, b) => b[1] - a[1])
+  const largestCategoryTotal = Math.max(...categoryEntries.map(([, amount]) => amount), 1)
+  const monthlyEntries = Object.entries(analytics?.monthlyTotals ?? {}).sort(([monthA], [monthB]) => monthA.localeCompare(monthB))
+  const largestMonthlyTotal = Math.max(...monthlyEntries.map(([, amount]) => amount), 1)
+
+  // Helper to refresh analytics data
+  const refreshAnalytics = async () => {
+    setAnalyticsLoading(true)
+    setAnalyticsError(false)
+    try {
+      const response = await fetch('http://localhost:8080/api/expenses/analytics?householdId=1')
+      if (!response.ok) {
+        setAnalyticsError(true)
+        setAnalyticsLoading(false)
+        return
+      }
+      const data: SpendingAnalytics = await response.json()
+      setAnalytics(data)
+      setAnalyticsError(false)
+      setAnalyticsLoading(false)
+    } catch {
+      setAnalyticsError(true)
+      setAnalyticsLoading(false)
+    }
+  }
 
   const handleAddExpense = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -120,6 +194,7 @@ function App() {
         throw new Error(message || 'Could not save the expense. Please check the details and try again.')
       }
 
+      // Refresh expenses and balances
       const expensesResponse = await fetch('http://localhost:8080/api/expenses')
       if (!expensesResponse.ok) throw new Error('Expense saved, but the expense list could not refresh. Refresh the page to see it.')
       const expensesData = await expensesResponse.json()
@@ -130,6 +205,11 @@ function App() {
         const balancesData = await balancesResponse.json()
         setBalances(balancesData)
       }
+
+      // Refresh analytics (non-fatal)
+      try {
+        await refreshAnalytics()
+      } catch {}
 
       setIsAddExpenseOpen(false)
       setNewExpenseDescription('')
@@ -142,6 +222,151 @@ function App() {
       setExpenseSubmitError(error instanceof Error ? error.message : 'Something went wrong while saving the expense.')
     } finally {
       setExpenseSubmitting(false)
+    }
+  }
+
+  // Refresh expenses, balances, and analytics
+  const refreshExpensesAndBalances = async () => {
+    const [expensesResponse, balancesResponse, analyticsResponse] = await Promise.all([
+      fetch('http://localhost:8080/api/expenses'),
+      fetch('http://localhost:8080/api/expenses/balances'),
+      fetch('http://localhost:8080/api/expenses/analytics?householdId=1'),
+    ])
+
+    if (!expensesResponse.ok) throw new Error('Could not refresh expenses. Please refresh the page.')
+    setExpenses(await expensesResponse.json())
+
+    if (balancesResponse.ok) {
+      setBalances(await balancesResponse.json())
+    }
+
+    if (analyticsResponse.ok) {
+      try {
+        const analyticsData: SpendingAnalytics = await analyticsResponse.json()
+        setAnalytics(analyticsData)
+        setAnalyticsError(false)
+        setAnalyticsLoading(false)
+      } catch {
+        setAnalyticsError(true)
+        setAnalyticsLoading(false)
+      }
+    } else {
+      setAnalyticsError(true)
+      setAnalyticsLoading(false)
+    }
+  }
+
+  const openEditExpense = async (expenseId: number) => {
+    setEditExpenseError('')
+    setExpenseActionError('')
+
+    try {
+      const response = await fetch(`http://localhost:8080/api/expenses/${expenseId}`)
+      if (!response.ok) throw new Error('Could not load this expense for editing.')
+      const expense = await response.json()
+
+      setEditingExpenseId(expenseId)
+      setEditExpenseDescription(expense.description ?? expense.title ?? '')
+      setEditExpenseAmount(String(expense.amount ?? ''))
+      setEditExpensePaidBy(String(expense.paidBy?.id ?? expense.paidById ?? 1))
+      setEditExpenseCategory(expense.category ?? 'OTHER')
+      setEditExpenseDate(String(expense.date ?? new Date().toISOString().slice(0, 10)).slice(0, 10))
+
+      const splitSelection: Record<string, boolean> = { '1': false, '2': false, '3': false }
+      if (Array.isArray(expense.splits)) {
+        expense.splits.forEach((split: { userId?: number; user?: { id?: number }; amountOwed?: number }) => {
+          const userId = split.userId ?? split.user?.id
+          if (userId !== undefined && String(userId) in splitSelection) {
+            splitSelection[String(userId)] = true
+          }
+        })
+      }
+      if (!Object.values(splitSelection).some(Boolean)) {
+        splitSelection['1'] = true
+        splitSelection['2'] = true
+        splitSelection['3'] = true
+      }
+      setEditExpenseSplits(splitSelection)
+    } catch (error) {
+      setExpenseActionError(error instanceof Error ? error.message : 'Could not load this expense.')
+    }
+  }
+
+  const handleUpdateExpense = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (editingExpenseId === null) return
+
+    setEditExpenseSubmitting(true)
+    setEditExpenseError('')
+
+    const selectedUserIds = Object.entries(editExpenseSplits)
+      .filter(([, selected]) => selected)
+      .map(([userId]) => Number(userId))
+
+    if (selectedUserIds.length === 0) {
+      setEditExpenseError('Select at least one housemate to split this expense with.')
+      setEditExpenseSubmitting(false)
+      return
+    }
+
+    const amount = Number(editExpenseAmount)
+    let allocated = 0
+    const splitAmount = Math.round((amount / selectedUserIds.length) * 100) / 100
+    const splits = selectedUserIds.map((userId, index) => {
+      const amountOwed = index === selectedUserIds.length - 1
+        ? Math.round((amount - allocated) * 100) / 100
+        : splitAmount
+      allocated = Math.round((allocated + amountOwed) * 100) / 100
+      return { userId, amountOwed }
+    })
+
+    try {
+      const response = await fetch(`http://localhost:8080/api/expenses/${editingExpenseId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          description: editExpenseDescription.trim(),
+          amount,
+          paidById: Number(editExpensePaidBy),
+          householdId: 1,
+          category: editExpenseCategory,
+          date: editExpenseDate,
+          splits,
+        }),
+      })
+
+      if (!response.ok) {
+        const message = await response.text()
+        throw new Error(message || 'Could not update the expense. Please check the details and try again.')
+      }
+
+      await refreshExpensesAndBalances()
+      setEditingExpenseId(null)
+    } catch (error) {
+      setEditExpenseError(error instanceof Error ? error.message : 'Something went wrong while updating the expense.')
+    } finally {
+      setEditExpenseSubmitting(false)
+    }
+  }
+
+  const handleDeleteExpense = async (expenseId: number) => {
+    const confirmed = window.confirm('Delete this expense? This will also update household balances.')
+    if (!confirmed) return
+
+    setDeletingExpenseId(expenseId)
+    setExpenseActionError('')
+
+    try {
+      const response = await fetch(`http://localhost:8080/api/expenses/${expenseId}`, { method: 'DELETE' })
+      if (!response.ok) {
+        const message = await response.text()
+        throw new Error(message || 'Could not delete the expense.')
+      }
+      await refreshExpensesAndBalances()
+    } catch (error) {
+      setExpenseActionError(error instanceof Error ? error.message : 'Something went wrong while deleting the expense.')
+    } finally {
+      setDeletingExpenseId(null)
     }
   }
 
@@ -332,6 +557,148 @@ function App() {
           </div>
         )}
 
+        {editingExpenseId !== null && (
+          <div className="modal-backdrop" onClick={(event) => {
+            if (event.target === event.currentTarget && !editExpenseSubmitting) setEditingExpenseId(null)
+          }}>
+            <section className="add-expense-modal" role="dialog" aria-modal="true" aria-labelledby="edit-expense-title">
+              <div className="section-card-heading">
+                <div>
+                  <p className="eyebrow">HOUSEHOLD SPENDING</p>
+                  <h2 id="edit-expense-title">Edit expense</h2>
+                </div>
+                <button className="modal-close-button" type="button" aria-label="Close edit expense form" onClick={() => setEditingExpenseId(null)} disabled={editExpenseSubmitting}>×</button>
+              </div>
+              <p className="intro-text">Update the details and split for this expense.</p>
+              <form className="add-expense-form" onSubmit={handleUpdateExpense}>
+                <label className="expense-form-field">
+                  Description
+                  <input type="text" value={editExpenseDescription} onChange={(event) => setEditExpenseDescription(event.target.value)} required maxLength={120} />
+                </label>
+                <div className="expense-form-grid">
+                  <label className="expense-form-field">
+                    Amount (£)
+                    <input type="number" min="0.01" step="0.01" value={editExpenseAmount} onChange={(event) => setEditExpenseAmount(event.target.value)} required />
+                  </label>
+                  <label className="expense-form-field">
+                    Date
+                    <input type="date" value={editExpenseDate} onChange={(event) => setEditExpenseDate(event.target.value)} required />
+                  </label>
+                </div>
+                <div className="expense-form-grid">
+                  <label className="expense-form-field">
+                    Paid by
+                    <select value={editExpensePaidBy} onChange={(event) => setEditExpensePaidBy(event.target.value)}>
+                      <option value="1">Doga</option>
+                      <option value="2">April</option>
+                      <option value="3">Ecren</option>
+                    </select>
+                  </label>
+                  <label className="expense-form-field">
+                    Category
+                    <select value={editExpenseCategory} onChange={(event) => setEditExpenseCategory(event.target.value)}>
+                      <option value="GROCERIES">Groceries</option>
+                      <option value="UTILITIES">Utilities</option>
+                      <option value="RENT">Rent</option>
+                      <option value="HOUSEHOLD">Household</option>
+                      <option value="TRANSPORT">Transport</option>
+                      <option value="ENTERTAINMENT">Entertainment</option>
+                      <option value="OTHER">Other</option>
+                    </select>
+                  </label>
+                </div>
+                <fieldset className="expense-split-fieldset">
+                  <legend>Split equally between</legend>
+                  {[
+                    { id: '1', name: 'Doga' },
+                    { id: '2', name: 'April' },
+                    { id: '3', name: 'Ecren' },
+                  ].map((housemate) => (
+                    <label className="expense-split-option" key={housemate.id}>
+                      <input type="checkbox" checked={Boolean(editExpenseSplits[housemate.id])} onChange={(event) => setEditExpenseSplits((current) => ({ ...current, [housemate.id]: event.target.checked }))} />
+                      <span>{housemate.name}</span>
+                    </label>
+                  ))}
+                </fieldset>
+                {editExpenseError && <p className="expense-form-error" role="alert">{editExpenseError}</p>}
+                <div className="modal-actions">
+                  <button className="modal-cancel-button" type="button" onClick={() => setEditingExpenseId(null)} disabled={editExpenseSubmitting}>Cancel</button>
+                  <button className="add-expense-button" type="submit" disabled={editExpenseSubmitting}>{editExpenseSubmitting ? 'Saving…' : 'Save changes'}</button>
+                </div>
+              </form>
+            </section>
+          </div>
+        )}
+        <section className="analytics-section" aria-labelledby="analytics-title">
+          <div className="section-heading analytics-heading">
+            <div>
+              <p className="eyebrow">UNDERSTAND YOUR SPENDING</p>
+              <h2 id="analytics-title">Spending analytics</h2>
+              <p className="analytics-description">A clearer picture of where your household money goes.</p>
+            </div>
+            <span className="household-badge"><span className="status-dot" /> Live data</span>
+          </div>
+
+          {analyticsLoading ? (
+            <div className="content-card analytics-state">Loading spending analytics…</div>
+          ) : analyticsError || !analytics ? (
+            <div className="content-card analytics-state" role="alert">Spending analytics could not load. Check that the backend is running and refresh the page.</div>
+          ) : (
+            <>
+              <div className="analytics-summary-grid">
+                <article className="summary-card analytics-total-card">
+                  <div className="summary-card-top"><span className="card-symbol spending-symbol">£</span><span className="card-label">TOTAL SPENDING</span></div>
+                  <p className="summary-value">£{Number(analytics.totalSpending).toFixed(2)}</p>
+                  <p className="summary-note">Across all recorded household expenses</p>
+                </article>
+                <article className="summary-card analytics-count-card">
+                  <div className="summary-card-top"><span className="card-symbol people-symbol">▤</span><span className="card-label">RECORDED EXPENSES</span></div>
+                  <p className="summary-value">{analytics.expenseCount}</p>
+                  <p className="summary-note">Individual expense records</p>
+                </article>
+              </div>
+
+              <div className="analytics-chart-grid">
+                <article className="content-card analytics-chart-card">
+                  <div className="section-card-heading">
+                    <div><p className="eyebrow">WHERE IT GOES</p><h3>Spending by category</h3></div>
+                  </div>
+                  {categoryEntries.length === 0 ? (
+                    <p className="analytics-empty-note">No category spending to show yet.</p>
+                  ) : (
+                    <div className="analytics-bars">
+                      {categoryEntries.map(([category, amount]) => (
+                        <div className="analytics-bar-row" key={category}>
+                          <div className="analytics-bar-label"><span>{category.replaceAll('_', ' ')}</span><strong>£{Number(amount).toFixed(2)}</strong></div>
+                          <div className="analytics-bar-track"><div className="analytics-bar-fill category-bar-fill" style={{ width: `${(amount / largestCategoryTotal) * 100}%` }} /></div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </article>
+
+                <article className="content-card analytics-chart-card">
+                  <div className="section-card-heading">
+                    <div><p className="eyebrow">OVER TIME</p><h3>Monthly spending</h3></div>
+                  </div>
+                  {monthlyEntries.length === 0 ? (
+                    <p className="analytics-empty-note">No monthly spending to show yet.</p>
+                  ) : (
+                    <div className="analytics-bars monthly-analytics-bars">
+                      {monthlyEntries.map(([month, amount]) => (
+                        <div className="analytics-bar-row" key={month}>
+                          <div className="analytics-bar-label"><span>{new Date(`${month}-01T12:00:00`).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}</span><strong>£{Number(amount).toFixed(2)}</strong></div>
+                          <div className="analytics-bar-track"><div className="analytics-bar-fill monthly-bar-fill" style={{ width: `${(amount / largestMonthlyTotal) * 100}%` }} /></div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </article>
+              </div>
+            </>
+          )}
+        </section>
+
         <section className="section-heading">
           <div>
             <p className="eyebrow">AT A GLANCE</p>
@@ -382,6 +749,69 @@ function App() {
           </article>
         </section>
 
+        <section className="balance-overview-section" aria-labelledby="balance-overview-title">
+          <div className="section-heading balance-overview-heading">
+            <div>
+              <p className="eyebrow">FAIR SHARES, CLEARLY</p>
+              <h2 id="balance-overview-title">Balance overview</h2>
+              <p className="balance-overview-description">See where everyone stands across your household.</p>
+            </div>
+            <span className="household-badge"><span className="status-dot" /> Live balances</span>
+          </div>
+          {balancesLoading ? (
+            <div className="content-card balance-chart-state">Loading household balances…</div>
+          ) : balancesError ? (
+            <div className="content-card balance-chart-state" role="alert">Balances could not load. Check that the backend is running and refresh the page.</div>
+          ) : (
+            <>
+              <div className="balance-overview-cards">
+                {housemateBalances.map((housemate) => (
+                  <article className={`balance-person-card ${housemate.balance > 0 ? 'owes-you' : housemate.balance < 0 ? 'you-owe' : 'settled'}`} key={housemate.name}>
+                    <div className="balance-person-top">
+                      <span className={`person-avatar ${housemate.avatarClass}`}>{housemate.initial}</span>
+                      <span className="balance-person-name">{housemate.name}</span>
+                      <span className={`balance-status-dot ${housemate.balance > 0 ? 'positive' : housemate.balance < 0 ? 'negative' : 'neutral'}`} aria-hidden="true" />
+                    </div>
+                    <p className="balance-person-amount">{housemate.balance < 0 ? '-' : ''}£{Math.abs(housemate.balance).toFixed(2)}</p>
+                    <p className="balance-person-caption">{housemate.balance > 0 ? 'Net amount owed to you' : housemate.balance < 0 ? 'Net amount you owe' : 'All settled up'}</p>
+                  </article>
+                ))}
+              </div>
+              <article className="content-card balance-chart-card">
+                <div className="section-card-heading balance-chart-heading">
+                  <div>
+                    <p className="eyebrow">HOUSEHOLD BREAKDOWN</p>
+                    <h3>Net balance by housemate</h3>
+                  </div>
+                  <span className="balance-chart-legend"><span className="legend-positive" /> Owed <span className="legend-negative" /> Owes</span>
+                </div>
+                <div className="balance-chart" role="img" aria-label="Horizontal chart comparing each housemate's net balance. Positive balances are shown to the right and negative balances to the left.">
+                  {housemateBalances.map((housemate) => {
+                    const barWidth = `${(Math.abs(housemate.balance) / largestAbsoluteBalance) * 100}%`
+                    return (
+                      <div className="balance-chart-row" key={housemate.name}>
+                        <span className="balance-chart-name">{housemate.name}</span>
+                        <div className="balance-chart-track">
+                          <div className="balance-chart-zero-line" />
+                          {housemate.balance < 0 ? (
+                            <div className="balance-chart-bar balance-chart-bar-negative" style={{ width: barWidth }} />
+                          ) : housemate.balance > 0 ? (
+                            <div className="balance-chart-bar balance-chart-bar-positive" style={{ width: barWidth }} />
+                          ) : null}
+                        </div>
+                        <strong className={`balance-chart-value ${housemate.balance > 0 ? 'positive' : housemate.balance < 0 ? 'negative' : ''}`}>
+                          {housemate.balance < 0 ? '-' : ''}£{Math.abs(housemate.balance).toFixed(2)}
+                        </strong>
+                      </div>
+                    )
+                  })}
+                </div>
+                <p className="balance-chart-note">Positive values mean money is owed to that housemate; negative values mean they owe money.</p>
+              </article>
+            </>
+          )}
+        </section>
+
         <section className="lower-grid">
           <article className="content-card expenses-card" id="expenses">
             <div className="section-card-heading">
@@ -408,6 +838,7 @@ function App() {
               </div>
             ) : (
               <div className="expense-list">
+                {expenseActionError && <p className="expense-form-error" role="alert">{expenseActionError}</p>}
                 {[...expenses].sort((a, b) => b.id - a.id).slice(0, 5).map((expense) => (
                   <div className="expense-row" key={expense.id}>
                     <span className="expense-icon">£</span>
@@ -418,6 +849,14 @@ function App() {
                     <strong className="expense-amount">
                       £{Number(expense.amount).toFixed(2)}
                     </strong>
+                    <div className="expense-row-actions">
+                      <button className="expense-edit-button" type="button" onClick={() => void openEditExpense(expense.id)} disabled={deletingExpenseId === expense.id}>
+                        Edit
+                      </button>
+                      <button className="expense-delete-button" type="button" onClick={() => void handleDeleteExpense(expense.id)} disabled={deletingExpenseId === expense.id}>
+                        {deletingExpenseId === expense.id ? 'Deleting…' : 'Delete'}
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>

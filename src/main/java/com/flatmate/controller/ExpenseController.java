@@ -33,6 +33,9 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 
+import java.time.LocalDate;
+import org.springframework.web.bind.annotation.RequestParam;
+
 @Tag(name = "Expenses", description = "Create, view, update, and delete expenses, and calculate household balances and settlements.")
 @CrossOrigin(origins = "http://localhost:5173")
 @RestController
@@ -73,6 +76,22 @@ public class ExpenseController {
                         expense.getDate()
                 ))
                 .toList();
+    }
+
+    @Operation(summary = "Get spending analytics", description = "Returns total spending, expense count, category totals, and monthly totals for a household within an optional date range.")
+    @ApiResponse(responseCode = "200", description = "Spending analytics retrieved successfully")
+    @ApiResponse(responseCode = "404", description = "Household not found")
+    @GetMapping("/analytics")
+    public Map<String, Object> getSpendingAnalytics(
+            @Parameter(description = "ID of the household", example = "1")
+            @RequestParam(defaultValue = "1") int householdId,
+            @Parameter(description = "Start date, inclusive, in YYYY-MM-DD format", example = "2026-01-01")
+            @RequestParam(required = false) LocalDate startDate,
+            @Parameter(description = "End date, inclusive, in YYYY-MM-DD format", example = "2026-10-19")
+            @RequestParam(required = false) LocalDate endDate
+    ) {
+        validateHouseholdExists(householdId);
+        return expenseService.getSpendingAnalytics(householdId, startDate, endDate);
     }
 
     public record ExpenseResponse(
